@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inspeção Final</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Inspeção Final - Graffeno Jarinu</h1>
+        </header>
+
+        <div class="filters">
+            <input type="text" id="searchGeral" placeholder="🔍 Buscar por Serial, OP ou Código de Barras">
+            <button id="btnBuscar" class="btn">Buscar</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="aprovadas">Aprovadas</button>
+            <button class="tab-btn" data-tab="inspecao">Em Inspeção</button>
+            <button class="tab-btn" data-tab="avaliacao">Aguardando Avaliação</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="tabelaInspecoes" class="appsheet-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Serial</th>
+                        <th>Código Barras</th>
+                        <th>OP</th>
+                        <th>Peça</th>
+                        <th>Projeto</th>
+                        <th>Veículo</th>
+                        <th>Produto</th>
+                        <th>Sensor</th>
+                        <th>Aprovada</th>
+                        <th>Editar</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Modal Adicionar -->
+        <div id="modalAdicionar" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>➕ Adicionar Nova Inspeção</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="formAdicionar">
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label>Turno Destape:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_destape">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_destape">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_destape">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_destape" id="turnoDestapeAdd">
+                        </div>
+                        <div class="form-row" id="inspDestapeAdd" style="display: none;">
+                            <label>Insp. Resp. Destape:</label>
+                            <select name="insp_resp_destape" id="selectDestapeAdd">
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Código de Barras:</label>
+                            <input type="text" name="codigo_de_barras" required placeholder="Digite o código de barras">
+                        </div>
+                        <div class="form-row">
+                            <label>Serial:</label>
+                            <input type="text" name="serial" required placeholder="Digite o serial">
+                        </div>
+                        <!-- Campos hidden para armazenar dados -->
+                        <input type="hidden" name="peca">
+                        <input type="hidden" name="op">
+                        <input type="hidden" name="projeto">
+                        <input type="hidden" name="veiculo">
+                        <input type="hidden" name="produto">
+                        
+                        <div class="form-row" id="sensorFieldAdd" style="display: none;">
+                            <label>Sensor:</label>
+                            <input type="text" name="sensor" placeholder="Digite o sensor">
+                        </div>
+                        <div class="form-row readonly-row">
+                            <label>Descrição:</label>
+                            <input type="text" name="descricao_carro" readonly>
+                        </div>
+                        <div class="form-row">
+                            <label>Turno Dimensional:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_dimensional">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_dimensional">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_dimensional">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_dimensional" id="turnoDimensionalAdd">
+                        </div>
+                        <div class="form-row" id="inspDimensionalAdd" style="display: none;">
+                            <label>Insp. Resp. Dimensional:</label>
+                            <select name="insp_resp_dimensional" id="selectDimensionalAdd">
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-row" id="meioMedicaoAdd" style="display: none;">
+                            <label>Meio Medição Curvatura:</label>
+                            <select name="meio_medicao_curvatura">
+                                <option value="">Selecione</option>
+                                <option value="Gabarito">Gabarito</option>
+                                <option value="Galga">Galga</option>
+                                <option value="Matriz">Matriz</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Campos Perimetrais (ocultos inicialmente) -->
+                        <div id="camposPerimetraisAdd" style="display: none;">
+                            <div class="form-row"><label>Perimetral 1:</label><input type="number" step="0.01" name="perimetral_mm_1"></div>
+                            <div class="form-row"><label>Perimetral 2:</label><input type="number" step="0.01" name="perimetral_mm_2"></div>
+                            <div class="form-row"><label>Perimetral 3:</label><input type="number" step="0.01" name="perimetral_mm_3"></div>
+                            <div class="form-row"><label>Perimetral 4:</label><input type="number" step="0.01" name="perimetral_mm_4"></div>
+                            <div class="form-row"><label>Perimetral 5:</label><input type="number" step="0.01" name="perimetral_mm_5"></div>
+                            <div class="form-row"><label>Perimetral 6:</label><input type="number" step="0.01" name="perimetral_mm_6"></div>
+                            <div class="form-row"><label>Perimetral 7:</label><input type="number" step="0.01" name="perimetral_mm_7"></div>
+                            <div class="form-row"><label>Perimetral 8:</label><input type="number" step="0.01" name="perimetral_mm_8"></div>
+                            <div class="form-row"><label>Perimetral 9:</label><input type="number" step="0.01" name="perimetral_mm_9"></div>
+                            <div class="form-row"><label>Perimetral 10:</label><input type="number" step="0.01" name="perimetral_mm_10"></div>
+                            <div class="form-row"><label>Perimetral 12:</label><input type="number" step="0.01" name="perimetral_12"></div>
+                            <div class="form-row"><label>Perimetral 13:</label><input type="number" step="0.01" name="perimetral_13"></div>
+                            <div class="form-row"><label>Perimetral 14:</label><input type="number" step="0.01" name="perimetral_14"></div>
+                            <div class="form-row"><label>Perimetral 15:</label><input type="number" step="0.01" name="perimetral_15"></div>
+                            <div class="form-row"><label>Perimetral 16:</label><input type="number" step="0.01" name="perimetral_16"></div>
+                        </div>
+                        
+                        <!-- Campos Curvatura (ocultos inicialmente) -->
+                        <div id="camposCurvaturaAdd" style="display: none;">
+                            <div class="form-row"><label>Curvatura A:</label><input type="number" step="0.01" name="curvatura_mm_a"></div>
+                            <div class="form-row"><label>Curvatura B:</label><input type="number" step="0.01" name="curvatura_mm_b"></div>
+                            <div class="form-row"><label>Curvatura C:</label><input type="number" step="0.01" name="curvatura_mm_c"></div>
+                            <div class="form-row"><label>Curvatura D:</label><input type="number" step="0.01" name="curvatura_mm_d"></div>
+                            <div class="form-row"><label>Curvatura E:</label><input type="number" step="0.01" name="curvatura_mm_e"></div>
+                            <div class="form-row"><label>Curvatura F:</label><input type="number" step="0.01" name="curvatura_mm_f"></div>
+                            <div class="form-row"><label>Curvatura G:</label><input type="number" step="0.01" name="curvatura_mm_g"></div>
+                            <div class="form-row"><label>Curvatura H:</label><input type="number" step="0.01" name="curvatura_mm_h"></div>
+                            <div class="form-row"><label>Curvatura I:</label><input type="number" step="0.01" name="curvatura_mm_i"></div>
+                            <div class="form-row"><label>Curvatura J:</label><input type="number" step="0.01" name="curvatura_mm_j"></div>
+                            <div class="form-row"><label>Curvatura K:</label><input type="number" step="0.01" name="curvatura_mm_k"></div>
+                            <div class="form-row"><label>Curvatura L:</label><input type="number" step="0.01" name="curvatura_mm_l"></div>
+                            <div class="form-row"><label>Curvatura M:</label><input type="number" step="0.01" name="curvatura_m"></div>
+                            <div class="form-row"><label>Curvatura N:</label><input type="number" step="0.01" name="curvatura_n"></div>
+                            <div class="form-row"><label>Curvatura O:</label><input type="number" step="0.01" name="curvatura_o"></div>
+                            <div class="form-row"><label>Curvatura P:</label><input type="number" step="0.01" name="curvatura_p"></div>
+                        </div>
+                        
+                        <!-- Campos DIN (só para PBS/VGA) -->
+                        <div id="camposDinAdd" style="display: none;">
+                            <div class="form-row">
+                                <label>Turno DIN:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_din">Turno 1</button>
+                                    <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_din">Turno 2</button>
+                                    <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_din">Turno 3</button>
+                                </div>
+                                <input type="hidden" name="turno_din" id="turnoDinAdd">
+                            </div>
+                            <div id="camposDinDetalhesAdd" style="display: none;">
+                                <div class="form-row">
+                                    <label>Insp. Resp. DIN:</label>
+                                    <select name="insp_resp_din" id="selectDinAdd">
+                                        <option value="">Selecione</option>
+                                    </select>
+                                </div>
+                                <div class="form-row"><label>Dupla Imagem:</label><input type="text" name="dupla_imagem"></div>
+                                <div class="form-row"><label>Distorção:</label><input type="text" name="distorcao"></div>
+                                <div class="form-row">
+                                    <label>A1:</label>
+                                    <select name="a1">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A2:</label>
+                                    <select name="a2">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A3:</label>
+                                    <select name="a3">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A4:</label>
+                                    <select name="a4">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A5:</label>
+                                    <select name="a5">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A6:</label>
+                                    <select name="a6">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A7:</label>
+                                    <select name="a7">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A8:</label>
+                                    <select name="a8">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Campos Gerais -->
+                        <div class="form-row"><label>Resistência:</label><input type="text" name="resistencia"></div>
+                        
+                        <!-- Campos Mesa -->
+                        <div class="form-row">
+                            <label>Turno Mesa:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_mesa">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_mesa">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_mesa">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_mesa" id="turnoMesaAdd">
+                        </div>
+                        <div id="camposMesaAdd" style="display: none;">
+                            <div class="form-row">
+                                <label>Insp. Resp. Mesa:</label>
+                                <select name="insp_resp_mesa" id="selectMesaAdd">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Ficha Técnica Frente:</label>
+                                <button type="button" class="btn-camera" data-field="ficha_tecnica_frente">📷 Tirar Foto</button>
+                                <input type="hidden" name="ficha_tecnica_frente">
+                            </div>
+                            <div class="form-row">
+                                <label>Ficha Técnica Verso:</label>
+                                <button type="button" class="btn-camera" data-field="ficha_tecnica_verso">📷 Tirar Foto</button>
+                                <input type="hidden" name="ficha_tecnica_verso">
+                            </div>
+                            <div class="form-row">
+                                <label>Imagem Sensor:</label>
+                                <button type="button" class="btn-camera" data-field="imagem_sensor">📷 Tirar Foto</button>
+                                <input type="hidden" name="imagem_sensor">
+                            </div>
+                            <div class="form-row">
+                                <label>Aço:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="OK" data-field="aco">OK</button>
+                                    <button type="button" class="btn-turno" data-turno="N/OK" data-field="aco">N/OK</button>
+                                </div>
+                                <input type="hidden" name="aco" id="acoAdd">
+                            </div>
+                            <div class="form-row">
+                                <label>Logo:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="LOGO CARBON" data-field="logo">LOGO CARBON</button>
+                                    <button type="button" class="btn-turno" data-turno="LOGO VOLVO" data-field="logo">LOGO VOLVO</button>
+                                    <button type="button" class="btn-turno" data-turno="SEM LOGO" data-field="logo">SEM LOGO</button>
+                                </div>
+                                <input type="hidden" name="logo" id="logoAdd">
+                            </div>
+                            
+                            <!-- Campos Offset -->
+                            <div class="form-row"><label>Offset 1:</label><input type="number" step="0.01" name="offset_1"></div>
+                            <div class="form-row"><label>Offset 2:</label><input type="number" step="0.01" name="offset_2"></div>
+                            <div class="form-row"><label>Offset 3:</label><input type="number" step="0.01" name="offset_3"></div>
+                            <div class="form-row"><label>Offset 4:</label><input type="number" step="0.01" name="offset_4"></div>
+                            <div class="form-row"><label>Offset 5:</label><input type="number" step="0.01" name="offset_5"></div>
+                            <div class="form-row"><label>Offset 6:</label><input type="number" step="0.01" name="offset_6"></div>
+                            <div class="form-row"><label>Offset 7:</label><input type="number" step="0.01" name="offset_7"></div>
+                            <div class="form-row"><label>Offset 8:</label><input type="number" step="0.01" name="offset_8"></div>
+                            <div class="form-row"><label>Offset 9:</label><input type="number" step="0.01" name="offset_9"></div>
+                            <div class="form-row"><label>Offset 10:</label><input type="number" step="0.01" name="offset_10"></div>
+                            <div class="form-row"><label>Offset 11:</label><input type="number" step="0.01" name="offset_11"></div>
+                            <div class="form-row"><label>Offset 12:</label><input type="number" step="0.01" name="offset_12"></div>
+                            <div class="form-row"><label>Offset 13:</label><input type="number" step="0.01" name="offset_13"></div>
+                            <div class="form-row"><label>Offset 14:</label><input type="number" step="0.01" name="offset_14"></div>
+                            <div class="form-row"><label>Offset 15:</label><input type="number" step="0.01" name="offset_15"></div>
+                            <div class="form-row"><label>Offset 16:</label><input type="number" step="0.01" name="offset_16"></div>
+                            <div class="form-row"><label>Offset 17:</label><input type="number" step="0.01" name="offset_17"></div>
+                            <div class="form-row"><label>Offset 18:</label><input type="number" step="0.01" name="offset_18"></div>
+                            <div class="form-row"><label>Offset 19:</label><input type="number" step="0.01" name="offset_19"></div>
+                            <div class="form-row"><label>Offset 20:</label><input type="number" step="0.01" name="offset_20"></div>
+                            <div class="form-row"><label>Espessura (mm):</label><input type="number" step="0.01" name="espessura_mm"></div>
+                        </div>
+                        
+                        <!-- Campos Bloqueio -->
+                        <div class="form-row">
+                            <label>Turno Bloqueio:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_bloqueio">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_bloqueio">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_bloqueio">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_bloqueio" id="turnoBloqueioAdd">
+                        </div>
+                        <div id="camposBloqueioAdd" style="display: none;">
+                            <div class="form-row">
+                                <label>Insp. Resp. Bloqueio:</label>
+                                <select name="insp_resp_bloqueio" id="selectBloqueioAdd">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Motivo Bloqueio:</label>
+                                <select name="motivo_bloqueio" multiple>
+                                    <option value="Marca de lixa">Marca de lixa</option>
+                                    <option value="Risco">Risco</option>
+                                    <option value="Raspão">Raspão</option>
+                                    <option value="Abrasão">Abrasão</option>
+                                    <option value="Marca de tinta">Marca de tinta</option>
+                                    <option value="Marca d'água">Marca d'água</option>
+                                    <option value="Marca de matriz">Marca de matriz</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Intensidade Bloqueio:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="Baixo" data-field="intensidade_bloqueio">Baixo</button>
+                                    <button type="button" class="btn-turno" data-turno="Médio" data-field="intensidade_bloqueio">Médio</button>
+                                    <button type="button" class="btn-turno" data-turno="Alto" data-field="intensidade_bloqueio">Alto</button>
+                                </div>
+                                <input type="hidden" name="intensidade_bloqueio" id="intensidadeBloqueioAdd">
+                            </div>
+                            <div class="form-row">
+                                <label>Serigrafia OK:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="OK" data-field="serigrafia_ok">OK</button>
+                                    <button type="button" class="btn-turno" data-turno="MÉDIA" data-field="serigrafia_ok">MÉDIA</button>
+                                    <button type="button" class="btn-turno" data-turno="FRACA" data-field="serigrafia_ok">FRACA</button>
+                                </div>
+                                <input type="hidden" name="serigrafia_ok" id="serigrafiaOkAdd">
+                            </div>
+                        </div>
+                        
+                        <!-- Campos Finais -->
+                        <div class="form-row">
+                            <label>A Peça Foi Aprovada:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Sim" data-field="a_peca_foi_aprovada">Sim</button>
+                                <button type="button" class="btn-turno" data-turno="Não" data-field="a_peca_foi_aprovada">Não</button>
+                                <button type="button" class="btn-turno" data-turno="Condicional" data-field="a_peca_foi_aprovada">Condicional</button>
+                                <button type="button" class="btn-turno" data-turno="Avaliação" data-field="a_peca_foi_aprovada">Avaliação</button>
+                            </div>
+                            <input type="hidden" name="a_peca_foi_aprovada" id="pecaAprovadaAdd">
+                        </div>
+                        <div class="form-row"><label>Observação:</label><textarea name="observacao" rows="3"></textarea></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
+                        <button type="button" class="btn btn-cancel">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Editar -->
+        <div id="modalEditar" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✏️ Editar Inspeção</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="formEditar">
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label>Turno Destape:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_destape">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_destape">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_destape">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_destape" id="turnoDestape">
+                        </div>
+                        <div class="form-row" id="inspDestape" style="display: none;">
+                            <label>Insp. Resp. Destape:</label>
+                            <select name="insp_resp_destape" id="selectDestape">
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Código de Barras:</label>
+                            <input type="text" name="codigo_de_barras">
+                        </div>
+                        <div class="form-row">
+                            <label>Serial:</label>
+                            <input type="text" name="serial">
+                        </div>
+                        <div class="form-row">
+                            <label>Descrição:</label>
+                            <input type="text" name="descricao_carro" readonly>
+                        </div>
+                        <div class="form-row">
+                            <label>Turno Dimensional:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_dimensional">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_dimensional">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_dimensional">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_dimensional" id="turnoDimensional">
+                        </div>
+                        <div class="form-row" id="inspDimensional" style="display: none;">
+                            <label>Insp. Resp. Dimensional:</label>
+                            <select name="insp_resp_dimensional" id="selectDimensional">
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-row" id="meioMedicao" style="display: none;">
+                            <label>Meio Medição Curvatura:</label>
+                            <select name="meio_medicao_curvatura">
+                                <option value="">Selecione</option>
+                                <option value="Gabarito">Gabarito</option>
+                                <option value="Galga">Galga</option>
+                                <option value="Matriz">Matriz</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Campos Perimetrais (ocultos inicialmente) -->
+                        <div id="camposPerimetrais" style="display: none;">
+                            <div class="form-row"><label>Perimetral 1:</label><input type="number" step="0.01" name="perimetral_mm_1"></div>
+                            <div class="form-row"><label>Perimetral 2:</label><input type="number" step="0.01" name="perimetral_mm_2"></div>
+                            <div class="form-row"><label>Perimetral 3:</label><input type="number" step="0.01" name="perimetral_mm_3"></div>
+                            <div class="form-row"><label>Perimetral 4:</label><input type="number" step="0.01" name="perimetral_mm_4"></div>
+                            <div class="form-row"><label>Perimetral 5:</label><input type="number" step="0.01" name="perimetral_mm_5"></div>
+                            <div class="form-row"><label>Perimetral 6:</label><input type="number" step="0.01" name="perimetral_mm_6"></div>
+                            <div class="form-row"><label>Perimetral 7:</label><input type="number" step="0.01" name="perimetral_mm_7"></div>
+                            <div class="form-row"><label>Perimetral 8:</label><input type="number" step="0.01" name="perimetral_mm_8"></div>
+                            <div class="form-row"><label>Perimetral 9:</label><input type="number" step="0.01" name="perimetral_mm_9"></div>
+                            <div class="form-row"><label>Perimetral 10:</label><input type="number" step="0.01" name="perimetral_mm_10"></div>
+                            <div class="form-row"><label>Perimetral 12:</label><input type="number" step="0.01" name="perimetral_12"></div>
+                            <div class="form-row"><label>Perimetral 13:</label><input type="number" step="0.01" name="perimetral_13"></div>
+                            <div class="form-row"><label>Perimetral 14:</label><input type="number" step="0.01" name="perimetral_14"></div>
+                            <div class="form-row"><label>Perimetral 15:</label><input type="number" step="0.01" name="perimetral_15"></div>
+                            <div class="form-row"><label>Perimetral 16:</label><input type="number" step="0.01" name="perimetral_16"></div>
+                        </div>
+                        
+                        <!-- Campos Curvatura (ocultos inicialmente) -->
+                        <div id="camposCurvatura" style="display: none;">
+                            <div class="form-row"><label>Curvatura A:</label><input type="number" step="0.01" name="curvatura_mm_a"></div>
+                            <div class="form-row"><label>Curvatura B:</label><input type="number" step="0.01" name="curvatura_mm_b"></div>
+                            <div class="form-row"><label>Curvatura C:</label><input type="number" step="0.01" name="curvatura_mm_c"></div>
+                            <div class="form-row"><label>Curvatura D:</label><input type="number" step="0.01" name="curvatura_mm_d"></div>
+                            <div class="form-row"><label>Curvatura E:</label><input type="number" step="0.01" name="curvatura_mm_e"></div>
+                            <div class="form-row"><label>Curvatura F:</label><input type="number" step="0.01" name="curvatura_mm_f"></div>
+                            <div class="form-row"><label>Curvatura G:</label><input type="number" step="0.01" name="curvatura_mm_g"></div>
+                            <div class="form-row"><label>Curvatura H:</label><input type="number" step="0.01" name="curvatura_mm_h"></div>
+                            <div class="form-row"><label>Curvatura I:</label><input type="number" step="0.01" name="curvatura_mm_i"></div>
+                            <div class="form-row"><label>Curvatura J:</label><input type="number" step="0.01" name="curvatura_mm_j"></div>
+                            <div class="form-row"><label>Curvatura K:</label><input type="number" step="0.01" name="curvatura_mm_k"></div>
+                            <div class="form-row"><label>Curvatura L:</label><input type="number" step="0.01" name="curvatura_mm_l"></div>
+                            <div class="form-row"><label>Curvatura M:</label><input type="number" step="0.01" name="curvatura_m"></div>
+                            <div class="form-row"><label>Curvatura N:</label><input type="number" step="0.01" name="curvatura_n"></div>
+                            <div class="form-row"><label>Curvatura O:</label><input type="number" step="0.01" name="curvatura_o"></div>
+                            <div class="form-row"><label>Curvatura P:</label><input type="number" step="0.01" name="curvatura_p"></div>
+                        </div>
+                        
+                        <!-- Campos DIN (só para PBS/VGA) -->
+                        <div id="camposDin" style="display: none;">
+                            <div class="form-row">
+                                <label>Turno DIN:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_din">Turno 1</button>
+                                    <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_din">Turno 2</button>
+                                    <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_din">Turno 3</button>
+                                </div>
+                                <input type="hidden" name="turno_din" id="turnoDin">
+                            </div>
+                            <div id="camposDinDetalhes" style="display: none;">
+                                <div class="form-row">
+                                    <label>Insp. Resp. DIN:</label>
+                                    <select name="insp_resp_din" id="selectDin">
+                                        <option value="">Selecione</option>
+                                    </select>
+                                </div>
+                                <div class="form-row"><label>Dupla Imagem:</label><input type="text" name="dupla_imagem"></div>
+                                <div class="form-row"><label>Distorção:</label><input type="text" name="distorcao"></div>
+                                <div class="form-row">
+                                    <label>A1:</label>
+                                    <select name="a1">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A2:</label>
+                                    <select name="a2">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A3:</label>
+                                    <select name="a3">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A4:</label>
+                                    <select name="a4">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A5:</label>
+                                    <select name="a5">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A6:</label>
+                                    <select name="a6">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A7:</label>
+                                    <select name="a7">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>A8:</label>
+                                    <select name="a8">
+                                        <option value="">Selecione</option>
+                                        <option value="DIST. PERIMETRAL BAIXA">DIST. PERIMETRAL BAIXA</option>
+                                        <option value="DIST. PERIMETRAL MÉDIA">DIST. PERIMETRAL MÉDIA</option>
+                                        <option value="DIST. PERIMETRAL FORTE">DIST. PERIMETRAL FORTE</option>
+                                        <option value="DIST. CENTRAL BAIXA">DIST. CENTRAL BAIXA</option>
+                                        <option value="DIST. CENTRAL MÉDIA">DIST. CENTRAL MÉDIA</option>
+                                        <option value="DIST. CENTRAL FORTE">DIST. CENTRAL FORTE</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Campos Gerais -->
+                        <div class="form-row"><label>Resistência:</label><input type="text" name="resistencia"></div>
+                        
+                        <!-- Campos Mesa -->
+                        <div class="form-row">
+                            <label>Turno Mesa:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_mesa">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_mesa">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_mesa">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_mesa" id="turnoMesa">
+                        </div>
+                        <div id="camposMesa" style="display: none;">
+                            <div class="form-row">
+                                <label>Insp. Resp. Mesa:</label>
+                                <select name="insp_resp_mesa" id="selectMesa">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Ficha Técnica Frente:</label>
+                                <button type="button" class="btn-camera" data-field="ficha_tecnica_frente">📷 Tirar Foto</button>
+                                <input type="hidden" name="ficha_tecnica_frente">
+                            </div>
+                            <div class="form-row">
+                                <label>Ficha Técnica Verso:</label>
+                                <button type="button" class="btn-camera" data-field="ficha_tecnica_verso">📷 Tirar Foto</button>
+                                <input type="hidden" name="ficha_tecnica_verso">
+                            </div>
+                            <div class="form-row">
+                                <label>Imagem Sensor:</label>
+                                <button type="button" class="btn-camera" data-field="imagem_sensor">📷 Tirar Foto</button>
+                                <input type="hidden" name="imagem_sensor">
+                            </div>
+                            <div class="form-row">
+                                <label>Aço:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="OK" data-field="aco">OK</button>
+                                    <button type="button" class="btn-turno" data-turno="N/OK" data-field="aco">N/OK</button>
+                                </div>
+                                <input type="hidden" name="aco" id="aco">
+                            </div>
+                            <div class="form-row">
+                                <label>Logo:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="LOGO CARBON" data-field="logo">LOGO CARBON</button>
+                                    <button type="button" class="btn-turno" data-turno="LOGO VOLVO" data-field="logo">LOGO VOLVO</button>
+                                    <button type="button" class="btn-turno" data-turno="SEM LOGO" data-field="logo">SEM LOGO</button>
+                                </div>
+                                <input type="hidden" name="logo" id="logo">
+                            </div>
+                            
+                            <!-- Campos Offset -->
+                            <div class="form-row"><label>Offset 1:</label><input type="number" step="0.01" name="offset_1"></div>
+                            <div class="form-row"><label>Offset 2:</label><input type="number" step="0.01" name="offset_2"></div>
+                            <div class="form-row"><label>Offset 3:</label><input type="number" step="0.01" name="offset_3"></div>
+                            <div class="form-row"><label>Offset 4:</label><input type="number" step="0.01" name="offset_4"></div>
+                            <div class="form-row"><label>Offset 5:</label><input type="number" step="0.01" name="offset_5"></div>
+                            <div class="form-row"><label>Offset 6:</label><input type="number" step="0.01" name="offset_6"></div>
+                            <div class="form-row"><label>Offset 7:</label><input type="number" step="0.01" name="offset_7"></div>
+                            <div class="form-row"><label>Offset 8:</label><input type="number" step="0.01" name="offset_8"></div>
+                            <div class="form-row"><label>Offset 9:</label><input type="number" step="0.01" name="offset_9"></div>
+                            <div class="form-row"><label>Offset 10:</label><input type="number" step="0.01" name="offset_10"></div>
+                            <div class="form-row"><label>Offset 11:</label><input type="number" step="0.01" name="offset_11"></div>
+                            <div class="form-row"><label>Offset 12:</label><input type="number" step="0.01" name="offset_12"></div>
+                            <div class="form-row"><label>Offset 13:</label><input type="number" step="0.01" name="offset_13"></div>
+                            <div class="form-row"><label>Offset 14:</label><input type="number" step="0.01" name="offset_14"></div>
+                            <div class="form-row"><label>Offset 15:</label><input type="number" step="0.01" name="offset_15"></div>
+                            <div class="form-row"><label>Offset 16:</label><input type="number" step="0.01" name="offset_16"></div>
+                            <div class="form-row"><label>Offset 17:</label><input type="number" step="0.01" name="offset_17"></div>
+                            <div class="form-row"><label>Offset 18:</label><input type="number" step="0.01" name="offset_18"></div>
+                            <div class="form-row"><label>Offset 19:</label><input type="number" step="0.01" name="offset_19"></div>
+                            <div class="form-row"><label>Offset 20:</label><input type="number" step="0.01" name="offset_20"></div>
+                            <div class="form-row"><label>Espessura (mm):</label><input type="number" step="0.01" name="espessura_mm"></div>
+                        </div>
+                        
+                        <!-- Campos Bloqueio -->
+                        <div class="form-row">
+                            <label>Turno Bloqueio:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Turno 1" data-field="turno_bloqueio">Turno 1</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 2" data-field="turno_bloqueio">Turno 2</button>
+                                <button type="button" class="btn-turno" data-turno="Turno 3" data-field="turno_bloqueio">Turno 3</button>
+                            </div>
+                            <input type="hidden" name="turno_bloqueio" id="turnoBloqueio">
+                        </div>
+                        <div id="camposBloqueio" style="display: none;">
+                            <div class="form-row">
+                                <label>Insp. Resp. Bloqueio:</label>
+                                <select name="insp_resp_bloqueio" id="selectBloqueio">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Motivo Bloqueio:</label>
+                                <select name="motivo_bloqueio" multiple>
+                                    <option value="Marca de lixa">Marca de lixa</option>
+                                    <option value="Risco">Risco</option>
+                                    <option value="Raspão">Raspão</option>
+                                    <option value="Abrasão">Abrasão</option>
+                                    <option value="Marca de tinta">Marca de tinta</option>
+                                    <option value="Marca d'água">Marca d'água</option>
+                                    <option value="Marca de matriz">Marca de matriz</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Intensidade Bloqueio:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="Baixo" data-field="intensidade_bloqueio">Baixo</button>
+                                    <button type="button" class="btn-turno" data-turno="Médio" data-field="intensidade_bloqueio">Médio</button>
+                                    <button type="button" class="btn-turno" data-turno="Alto" data-field="intensidade_bloqueio">Alto</button>
+                                </div>
+                                <input type="hidden" name="intensidade_bloqueio" id="intensidadeBloqueio">
+                            </div>
+                            <div class="form-row">
+                                <label>Serigrafia OK:</label>
+                                <div class="btn-group">
+                                    <button type="button" class="btn-turno" data-turno="OK" data-field="serigrafia_ok">OK</button>
+                                    <button type="button" class="btn-turno" data-turno="MÉDIA" data-field="serigrafia_ok">MÉDIA</button>
+                                    <button type="button" class="btn-turno" data-turno="FRACA" data-field="serigrafia_ok">FRACA</button>
+                                </div>
+                                <input type="hidden" name="serigrafia_ok" id="serigrafiaOk">
+                            </div>
+                        </div>
+                        
+                        <!-- Campos Finais -->
+                        <div class="form-row">
+                            <label>A Peça Foi Aprovada:</label>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Sim" data-field="a_peca_foi_aprovada">Sim</button>
+                                <button type="button" class="btn-turno" data-turno="Não" data-field="a_peca_foi_aprovada">Não</button>
+                                <button type="button" class="btn-turno" data-turno="Condicional" data-field="a_peca_foi_aprovada">Condicional</button>
+                                <button type="button" class="btn-turno" data-turno="Avaliação" data-field="a_peca_foi_aprovada">Avaliação</button>
+                            </div>
+                            <input type="hidden" name="a_peca_foi_aprovada" id="pecaAprovada">
+                        </div>
+                        <div class="form-row"><label>Observação:</label><textarea name="observacao" rows="3"></textarea></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
+                        <button type="button" class="btn btn-cancel">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="status" class="status-bar"></div>
+        
+        <!-- Botão Flutuante Adicionar -->
+        <button id="btnNovoFloat" class="btn-float">+</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
