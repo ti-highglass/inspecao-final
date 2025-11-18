@@ -45,8 +45,8 @@ def get_inspecoes():
     """
     
     if search:
-        query = base_query + " AND (serial ILIKE %s OR op ILIKE %s OR codigo_de_barras ILIKE %s) ORDER BY id DESC LIMIT 100"
-        cur.execute(query, (f'%{search}%', f'%{search}%', f'%{search}%'))
+        query = base_query + " AND (serial ILIKE %s OR op::text ILIKE %s OR codigo_de_barras ILIKE %s OR peca ILIKE %s OR (peca || op::text) ILIKE %s OR projeto ILIKE %s OR veiculo ILIKE %s) ORDER BY id DESC LIMIT 100"
+        cur.execute(query, (f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%'))
     else:
         query = base_query + " AND data >= CURRENT_DATE - INTERVAL '1 month' ORDER BY id DESC LIMIT 50"
         cur.execute(query)
@@ -84,6 +84,48 @@ def get_operadores():
     conn.close()
     return jsonify([op['nome_completo'] for op in operadores])
 
+@app.route('/api/tipos-defeitos', methods=['GET'])
+def get_tipos_defeitos():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT DISTINCT tipo_defeito FROM dados_uso_geral.tipos_de_defeito 
+        WHERE bloco = 'Bloco Blindado' AND status = 'Baixa'
+        ORDER BY tipo_defeito
+    """)
+    tipos = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([dict(tipo) for tipo in tipos])
+
+@app.route('/api/lideres', methods=['GET'])
+def get_lideres():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT nome_completo FROM operadores_producao 
+        WHERE operacao_ou_lideranca = 'Líder' AND fabrica = 'Graffeno - Jarinu'
+        ORDER BY nome_completo
+    """)
+    lideres = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([lider['nome_completo'] for lider in lideres])
+
+@app.route('/api/descricoes-defeitos/<tipo_defeito>', methods=['GET'])
+def get_descricoes_defeitos(tipo_defeito):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT DISTINCT descricao_defeito FROM dados_uso_geral.tipos_de_defeito 
+        WHERE bloco = 'Bloco Blindado' AND status = 'Baixa' AND tipo_defeito = %s
+        ORDER BY descricao_defeito
+    """, (tipo_defeito,))
+    descricoes = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([desc['descricao_defeito'] for desc in descricoes])
+
 @app.route('/api/inspecoes/<id>', methods=['GET'])
 def get_inspecao(id):
     conn = get_db_connection()
@@ -97,12 +139,17 @@ def get_inspecao(id):
 @app.route('/api/inspecoes', methods=['POST'])
 def create_inspecao():
     data = request.json
+    print(f"Dados recebidos: {data}")
+    
     conn = get_db_connection()
     cur = conn.cursor()
     
     columns = ', '.join(data.keys())
     placeholders = ', '.join(['%s'] * len(data))
     query = f'INSERT INTO insp_final_checklist ({columns}) VALUES ({placeholders})'
+    
+    print(f"Query: {query}")
+    print(f"Values: {list(data.values())}")
     
     try:
         cur.execute(query, list(data.values()))
@@ -111,6 +158,7 @@ def create_inspecao():
         conn.close()
         return jsonify({'success': True})
     except Exception as e:
+        print(f"Erro ao inserir: {str(e)}")
         conn.rollback()
         cur.close()
         conn.close()
@@ -119,6 +167,11 @@ def create_inspecao():
 @app.route('/api/inspecoes/<id>', methods=['PUT'])
 def update_inspecao(id):
     data = request.json
+    
+    # Se a_peca_foi_aprovada for Sim, Não ou Condicional, adicionar data_finalizacao
+    if data.get('a_peca_foi_aprovada') in ['Sim', 'Não', 'Condicional']:
+        data['data_finalizacao'] = 'NOW()'
+    
     conn = get_db_connection()
     cur = conn.cursor()
     

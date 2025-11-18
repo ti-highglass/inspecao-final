@@ -13,8 +13,7 @@
         </header>
 
         <div class="filters">
-            <input type="text" id="searchGeral" placeholder="🔍 Buscar por Serial, OP ou Código de Barras">
-            <button id="btnBuscar" class="btn">Buscar</button>
+            <input type="text" id="searchGeral" placeholder="🔍 Buscar por Serial, OP, Código de Barras, Projeto ou Veículo">
         </div>
 
         <div class="tabs">
@@ -23,25 +22,8 @@
             <button class="tab-btn" data-tab="avaliacao">Aguardando Avaliação</button>
         </div>
 
-        <div class="table-wrapper">
-            <table id="tabelaInspecoes" class="appsheet-table">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Serial</th>
-                        <th>Código Barras</th>
-                        <th>OP</th>
-                        <th>Peça</th>
-                        <th>Projeto</th>
-                        <th>Veículo</th>
-                        <th>Produto</th>
-                        <th>Sensor</th>
-                        <th>Aprovada</th>
-                        <th>Editar</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div class="cards-container" id="cardsContainer">
+            <!-- Cards serão inseridos aqui via JavaScript -->
         </div>
 
         <!-- Modal Adicionar -->
@@ -173,8 +155,24 @@
                                         <option value="">Selecione</option>
                                     </select>
                                 </div>
-                                <div class="form-row"><label>Dupla Imagem:</label><input type="text" name="dupla_imagem"></div>
-                                <div class="form-row"><label>Distorção:</label><input type="text" name="distorcao"></div>
+                                <div class="form-row">
+                                    <label>Dupla Imagem:</label>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn-turno btn-large" data-turno="LEVE" data-field="dupla_imagem">LEVE</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="MÉDIA" data-field="dupla_imagem">MÉDIA</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="FORTE" data-field="dupla_imagem">FORTE</button>
+                                    </div>
+                                    <input type="hidden" name="dupla_imagem" id="duplaImagemAdd">
+                                </div>
+                                <div class="form-row">
+                                    <label>Distorção:</label>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn-turno btn-large" data-turno="LEVE" data-field="distorcao">LEVE</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="MÉDIA" data-field="distorcao">MÉDIA</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="FORTE" data-field="distorcao">FORTE</button>
+                                    </div>
+                                    <input type="hidden" name="distorcao" id="distorcaoAdd">
+                                </div>
                                 <div class="form-row">
                                     <label>A1:</label>
                                     <select name="a1">
@@ -411,11 +409,42 @@
                             </div>
                             <input type="hidden" name="a_peca_foi_aprovada" id="pecaAprovadaAdd">
                         </div>
+                        
+                        <!-- Campos Condicionais (só aparecem se Condicional) -->
+                        <div id="camposCondicionaisAdd" style="display: none;">
+                            <div class="form-row">
+                                <label>Razão Condicional:</label>
+                                <select name="razao_condicional" id="razaoCondicionalAdd">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Descrição Razão Condicional:</label>
+                                <select name="descricao_razao_condicional" id="descricaoRazaoCondicionalAdd">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Liberação Líder:</label>
+                                <select name="liberacao_lider" id="liberacaoLiderAdd">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Assinatura Líder:</label>
+                                <canvas id="assinaturaCanvasAdd" width="400" height="150" style="border: 2px solid #e8eaed; border-radius: 8px; cursor: crosshair;"></canvas>
+                                <div style="margin-top: 10px;">
+                                    <button type="button" id="limparAssinaturaAdd" class="btn btn-secondary">🗑️ Limpar</button>
+                                </div>
+                                <input type="hidden" name="assinatura_lider" id="assinaturaLiderAdd">
+                            </div>
+                        </div>
+                        
                         <div class="form-row"><label>Observação:</label><textarea name="observacao" rows="3"></textarea></div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
                         <button type="button" class="btn btn-cancel">❌ Cancelar</button>
+                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
                     </div>
                 </form>
             </div>
@@ -539,8 +568,24 @@
                                         <option value="">Selecione</option>
                                     </select>
                                 </div>
-                                <div class="form-row"><label>Dupla Imagem:</label><input type="text" name="dupla_imagem"></div>
-                                <div class="form-row"><label>Distorção:</label><input type="text" name="distorcao"></div>
+                                <div class="form-row">
+                                    <label>Dupla Imagem:</label>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn-turno btn-large" data-turno="LEVE" data-field="dupla_imagem">LEVE</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="MÉDIA" data-field="dupla_imagem">MÉDIA</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="FORTE" data-field="dupla_imagem">FORTE</button>
+                                    </div>
+                                    <input type="hidden" name="dupla_imagem" id="duplaImagem">
+                                </div>
+                                <div class="form-row">
+                                    <label>Distorção:</label>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn-turno btn-large" data-turno="LEVE" data-field="distorcao">LEVE</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="MÉDIA" data-field="distorcao">MÉDIA</button>
+                                        <button type="button" class="btn-turno btn-large" data-turno="FORTE" data-field="distorcao">FORTE</button>
+                                    </div>
+                                    <input type="hidden" name="distorcao" id="distorcao">
+                                </div>
                                 <div class="form-row">
                                     <label>A1:</label>
                                     <select name="a1">
@@ -777,11 +822,42 @@
                             </div>
                             <input type="hidden" name="a_peca_foi_aprovada" id="pecaAprovada">
                         </div>
+                        
+                        <!-- Campos Condicionais (só aparecem se Condicional) -->
+                        <div id="camposCondicionais" style="display: none;">
+                            <div class="form-row">
+                                <label>Razão Condicional:</label>
+                                <select name="razao_condicional" id="razaoCondicional">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Descrição Razão Condicional:</label>
+                                <select name="descricao_razao_condicional" id="descricaoRazaoCondicional">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Liberação Líder:</label>
+                                <select name="liberacao_lider" id="liberacaoLider">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Assinatura Líder:</label>
+                                <canvas id="assinaturaCanvas" width="400" height="150" style="border: 2px solid #e8eaed; border-radius: 8px; cursor: crosshair;"></canvas>
+                                <div style="margin-top: 10px;">
+                                    <button type="button" id="limparAssinatura" class="btn btn-secondary">🗑️ Limpar</button>
+                                </div>
+                                <input type="hidden" name="assinatura_lider" id="assinaturaLider">
+                            </div>
+                        </div>
+                        
                         <div class="form-row"><label>Observação:</label><textarea name="observacao" rows="3"></textarea></div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
                         <button type="button" class="btn btn-cancel">❌ Cancelar</button>
+                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
                     </div>
                 </form>
             </div>

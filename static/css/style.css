@@ -40,22 +40,26 @@ h1 {
 }
 
 .btn {
-    padding: 12px 24px;
+    padding: 16px 32px;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    min-height: 56px;
+    flex: 1;
+    justify-content: center;
 }
 
 .btn-primary {
     background: #1a73e8;
     color: white;
-    box-shadow: 0 2px 8px rgba(26,115,232,0.3);
+    box-shadow: none;
+    border-right: 1px solid #e8eaed;
 }
 
 .btn-primary:hover {
@@ -76,8 +80,9 @@ h1 {
 }
 
 .btn-cancel {
-    background: #ea4335;
-    color: white;
+    background: #f8f9fa;
+    color: #5f6368;
+    border-left: 1px solid #e8eaed;
 }
 
 .btn-cancel:hover {
@@ -132,6 +137,7 @@ h1 {
     border-bottom: 2px solid #e8eaed;
     position: sticky;
     top: 0;
+    z-index: 2;
 }
 
 .appsheet-table td {
@@ -158,6 +164,10 @@ h1 {
     height: 100%;
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(4px);
+}
+
+.modal.show {
+    display: block;
 }
 
 .modal-content {
@@ -222,11 +232,12 @@ h1 {
 .form-row select,
 .form-row textarea {
     width: 100%;
-    padding: 12px 16px;
+    padding: 16px 20px;
     border: 2px solid #e8eaed;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 16px;
     transition: border-color 0.3s;
+    min-height: 50px;
 }
 
 .form-row input:focus,
@@ -243,8 +254,8 @@ h1 {
 }
 
 .form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 15px;
     padding: 24px 30px;
     max-height: 75vh;
@@ -252,10 +263,10 @@ h1 {
 }
 
 .form-actions {
-    padding: 20px 30px 30px;
+    padding: 0;
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
+    gap: 0;
+    justify-content: stretch;
     border-top: 1px solid #e8eaed;
 }
 
@@ -318,13 +329,13 @@ h1 {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     background: #1a73e8;
     color: white;
     border: none;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 300;
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(26,115,232,0.4);
@@ -333,6 +344,14 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.btn-float.hidden {
+    display: none !important;
+}
+
+body.modal-open .btn-float {
+    display: none;
 }
 
 .btn-float:hover {
@@ -348,15 +367,16 @@ h1 {
 }
 
 .btn-turno {
-    padding: 8px 16px;
+    padding: 12px 20px;
     border: 2px solid #dadce0;
     background: white;
     color: #5f6368;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     transition: all 0.2s;
+    min-width: 100px;
 }
 
 .btn-turno:hover {
@@ -368,6 +388,13 @@ h1 {
     background: #1a73e8;
     color: white;
     border-color: #1a73e8;
+}
+
+.btn-turno.btn-large {
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 100px;
 }
 
 .btn-camera {
@@ -428,4 +455,240 @@ h1 {
     background: white;
     color: #1a73e8;
     border-bottom-color: #1a73e8;
+}
+
+.cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 0;
+}
+
+.inspection-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid #1a73e8;
+    cursor: pointer;
+}
+
+.inspection-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a73e8;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.card-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-aprovada {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.status-condicional {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.status-reprovada {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.status-avaliacao {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.card-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.card-edit-btn {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.card-edit-btn:hover {
+    background: #1557b0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        padding: 15px 20px;
+        text-align: center;
+    }
+    
+    h1 {
+        font-size: 20px;
+    }
+    
+    .filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filters input {
+        width: 100%;
+    }
+    
+    .tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+    
+    .cards-container {
+        gap: 10px;
+        padding: 15px 0;
+    }
+    
+    .inspection-card {
+        padding: 16px;
+    }
+    
+    .card-title {
+        font-size: 14px;
+        line-height: 1.2;
+    }
+    
+    .card-info {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .info-label {
+        font-size: 11px;
+    }
+    
+    .info-value {
+        font-size: 13px;
+    }
+    
+    .card-edit-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .btn-float {
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+        font-size: 20px;
+    }
+    
+    .modal-content {
+        width: 98%;
+        margin: 1% auto;
+        max-height: 98vh;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        padding: 15px;
+        max-height: 80vh;
+    }
+    
+    .form-row {
+        margin-bottom: 15px;
+        padding: 0;
+    }
+    
+    .btn-group {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .btn-turno {
+        flex: 1;
+        min-width: 80px;
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .appsheet-table th:first-child,
+    .appsheet-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 1;
+    }
+    
+    .desc-cell {
+        max-width: 150px;
+        font-size: 10px;
+    }
+    
+    .code-cell,
+    .serial-cell {
+        max-width: 80px;
+        font-size: 10px;
+    }
 }

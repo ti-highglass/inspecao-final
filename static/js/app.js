@@ -1,6 +1,6 @@
 class AppSheetInspecao {
     constructor() {
-        this.tabela = document.getElementById('tabelaInspecoes').getElementsByTagName('tbody')[0];
+        this.cardsContainer = document.getElementById('cardsContainer');
         this.modalAdicionar = document.getElementById('modalAdicionar');
         this.modalEditar = document.getElementById('modalEditar');
         this.formAdicionar = document.getElementById('formAdicionar');
@@ -8,6 +8,7 @@ class AppSheetInspecao {
         this.statusBar = document.getElementById('status');
         this.editingId = null;
         this.selectedRows = new Set();
+        this.searchTimeout = null;
         
         this.initEventListeners();
         this.initTurnoButtons();
@@ -25,7 +26,13 @@ class AppSheetInspecao {
                 this.openModalAdicionar();
             });
         }
-        document.getElementById('btnBuscar').addEventListener('click', () => this.loadData());
+
+        
+        // Busca automática no campo de pesquisa
+        document.getElementById('searchGeral').addEventListener('input', () => {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => this.loadData(), 300);
+        });
 
         // Modals
         document.querySelectorAll('.close').forEach(btn => {
@@ -96,46 +103,70 @@ class AppSheetInspecao {
     }
 
     renderTable(data) {
-        this.tabela.innerHTML = '';
+        this.cardsContainer.innerHTML = '';
         this.selectedRows.clear();
         
         const fragment = document.createDocumentFragment();
         
         data.forEach(row => {
             console.log('Dados da linha:', row);
-            const tr = document.createElement('tr');
-            tr.dataset.id = row.id;
             
-            const dataFormatada = row.data ? this.formatarData(row.data) : '';
+            // Gerar descrição
+            const descricao = row.descricao_carro || this.gerarDescricao(row.peca, row.sensor, row.projeto, row.veiculo, row.produto);
             
-            tr.innerHTML = `
-                <td>${dataFormatada}</td>
-                <td>${row.serial || ''}</td>
-                <td>${row.codigo_de_barras || ''}</td>
-                <td>${row.op || ''}</td>
-                <td>${row.peca || ''}</td>
-                <td>${row.projeto || ''}</td>
-                <td>${row.veiculo || ''}</td>
-                <td>${row.produto || ''}</td>
-                <td>${row.sensor || ''}</td>
-                <td>${row.a_peca_foi_aprovada || ''}</td>
-                <td>
-                    <button class="btn-edit" data-id="${row.id}">✏️</button>
-                </td>
+            // Determinar status e classe CSS
+            const status = row.a_peca_foi_aprovada || 'Em Inspeção';
+            let statusClass = 'status-avaliacao';
+            if (status === 'Sim') statusClass = 'status-aprovada';
+            else if (status === 'Não') statusClass = 'status-reprovada';
+            else if (status === 'Condicional') statusClass = 'status-condicional';
+            
+            const card = document.createElement('div');
+            card.className = 'inspection-card';
+            card.dataset.id = row.id;
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <h3 class="card-title">${descricao}</h3>
+                    <span class="card-status ${statusClass}">${status}</span>
+                </div>
+                <div class="card-info">
+                    <div class="info-item">
+                        <span class="info-label">Serial</span>
+                        <span class="info-value">${row.serial || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Código Barras</span>
+                        <span class="info-value">${row.codigo_de_barras || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">OP</span>
+                        <span class="info-value">${row.op || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Data</span>
+                        <span class="info-value">${row.data ? this.formatarData(row.data) : '-'}</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="card-edit-btn" data-id="${row.id}">✏️ Editar</button>
+                </div>
             `;
             
-            // Adicionar event listener diretamente ao botão
-            const btnEdit = tr.querySelector('.btn-edit');
+            // Adicionar event listener ao botão de editar
+            const btnEdit = card.querySelector('.card-edit-btn');
             btnEdit.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 const id = e.target.getAttribute('data-id');
                 console.log('ID do botão clicado:', id);
                 this.editRow(id);
             });
-            fragment.appendChild(tr);
+            
+            fragment.appendChild(card);
         });
         
-        this.tabela.appendChild(fragment);
+        this.cardsContainer.appendChild(fragment);
     }
 
 
@@ -145,6 +176,7 @@ class AppSheetInspecao {
         this.formAdicionar.reset();
         await this.loadOperadores();
         this.modalAdicionar.style.display = 'block';
+        document.body.classList.add('modal-open');
         this.formAdicionar.querySelector('[name="codigo_de_barras"]').focus();
     }
 
@@ -153,14 +185,19 @@ class AppSheetInspecao {
             if (e.target.classList.contains('btn-turno')) {
                 const field = e.target.dataset.field;
                 const turno = e.target.dataset.turno;
+                const isActive = e.target.classList.contains('active');
                 
                 // Remove active de outros botões do mesmo grupo
                 e.target.parentElement.querySelectorAll('.btn-turno').forEach(btn => {
                     btn.classList.remove('active');
                 });
                 
-                // Ativa botão clicado
-                e.target.classList.add('active');
+                // Se não estava ativo, ativa. Se estava ativo, desativa (permite deselecionar)
+                let selectedValue = '';
+                if (!isActive) {
+                    e.target.classList.add('active');
+                    selectedValue = turno;
+                }
                 
                 // Define valor no campo hidden baseado no campo
                 const isAdd = this.modalAdicionar.style.display === 'block';
@@ -197,13 +234,24 @@ class AppSheetInspecao {
                     case 'a_peca_foi_aprovada':
                         hiddenFieldId = isAdd ? 'pecaAprovadaAdd' : 'pecaAprovada';
                         break;
+                    case 'dupla_imagem':
+                        hiddenFieldId = isAdd ? 'duplaImagemAdd' : 'duplaImagem';
+                        break;
+                    case 'distorcao':
+                        hiddenFieldId = isAdd ? 'distorcaoAdd' : 'distorcao';
+                        break;
                 }
                 
                 const hiddenField = document.getElementById(hiddenFieldId);
-                if (hiddenField) hiddenField.value = turno;
+                if (hiddenField) hiddenField.value = selectedValue;
                 
-                // Mostrar campos relacionados
-                this.toggleRelatedFields(field, turno);
+                // Mostrar campos relacionados (passa valor vazio se deselecionado)
+                this.toggleRelatedFields(field, selectedValue);
+                
+                // Mostrar campos condicionais se aprovação for "Condicional"
+                if (field === 'a_peca_foi_aprovada') {
+                    this.toggleConditionalFields(selectedValue);
+                }
             }
         });
     }
@@ -285,6 +333,7 @@ class AppSheetInspecao {
             
             console.log('Abrindo modal...');
             this.modalEditar.style.display = 'block';
+            document.body.classList.add('modal-open');
             
         } catch (error) {
             console.error('Erro completo:', error);
@@ -297,6 +346,7 @@ class AppSheetInspecao {
     closeModals() {
         this.modalAdicionar.style.display = 'none';
         this.modalEditar.style.display = 'none';
+        document.body.classList.remove('modal-open');
         this.editingId = null;
     }
 
@@ -420,6 +470,9 @@ class AppSheetInspecao {
                         if (camposDin) camposDin.style.display = 'none';
                     }
                     
+                    // Resetar botões de câmera
+                    this.resetCameraButtons();
+                    
                     console.log('Dados da OP:', dados);
                     console.log('Sensor recebido:', sensor);
                     console.log('Peça:', peca);
@@ -444,6 +497,10 @@ class AppSheetInspecao {
         data.data = new Date().toISOString().split('T')[0];
         data.fabrica = 'Graffeno - Jarinu';
         
+        console.log('Dados do formulário:', data);
+        console.log('Peça:', data.peca);
+        console.log('OP:', data.op);
+        
         try {
             const response = await fetch('/api/inspecoes', {
                 method: 'POST',
@@ -458,9 +515,11 @@ class AppSheetInspecao {
                 this.loadData();
                 this.showStatus('Inspeção adicionada com sucesso!', 'success');
             } else {
+                console.error('Erro do servidor:', result.error);
                 this.showStatus('Erro: ' + (result.error || 'Erro desconhecido'), 'error');
             }
         } catch (error) {
+            console.error('Erro na requisição:', error);
             this.showStatus('Erro ao salvar inspeção', 'error');
         }
     }
@@ -533,6 +592,292 @@ class AppSheetInspecao {
         setTimeout(() => {
             this.statusBar.classList.remove('show');
         }, 4000);
+    }
+    
+    async openCamera(fieldName) {
+        // Fallback para input file em dispositivos móveis
+        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            this.openFileInput(fieldName);
+            return;
+        }
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                } 
+            });
+            
+            // Criar modal de câmera
+            const cameraModal = document.createElement('div');
+            cameraModal.className = 'modal';
+            cameraModal.style.display = 'block';
+            cameraModal.innerHTML = `
+                <div class="modal-content" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <h2>📷 Capturar Foto - ${fieldName}</h2>
+                        <span class="close" id="closeCameraModal">&times;</span>
+                    </div>
+                    <div style="padding: 20px; text-align: center;">
+                        <video id="cameraVideo" autoplay playsinline style="width: 100%; max-width: 600px; border-radius: 8px;"></video>
+                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                        <div style="margin-top: 20px;">
+                            <button id="captureBtn" class="btn btn-primary">📷 Capturar</button>
+                            <button id="cancelCameraBtn" class="btn btn-cancel">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(cameraModal);
+            
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const captureBtn = document.getElementById('captureBtn');
+            const cancelBtn = document.getElementById('cancelCameraBtn');
+            const closeBtn = document.getElementById('closeCameraModal');
+            
+            video.srcObject = stream;
+            
+            const closeCamera = () => {
+                stream.getTracks().forEach(track => track.stop());
+                document.body.removeChild(cameraModal);
+            };
+            
+            captureBtn.addEventListener('click', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                
+                const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Salvar no campo hidden
+                const isAdd = this.modalAdicionar.style.display === 'block';
+                const form = isAdd ? this.formAdicionar : this.formEditar;
+                const hiddenField = form.querySelector(`[name="${fieldName}"]`);
+                if (hiddenField) {
+                    hiddenField.value = base64;
+                }
+                
+                // Atualizar botão para mostrar que foto foi capturada
+                const cameraBtn = form.querySelector(`[data-field="${fieldName}"]`);
+                if (cameraBtn) {
+                    cameraBtn.innerHTML = '✓ Foto Capturada';
+                    cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                }
+                
+                this.showStatus('Foto capturada com sucesso!', 'success');
+                closeCamera();
+            });
+            
+            cancelBtn.addEventListener('click', closeCamera);
+            closeBtn.addEventListener('click', closeCamera);
+            
+        } catch (error) {
+            console.error('Erro ao acessar câmera:', error);
+            this.openFileInput(fieldName);
+        }
+    }
+    
+    openFileInput(fieldName) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    
+                    // Salvar no campo hidden
+                    const isAdd = this.modalAdicionar.style.display === 'block';
+                    const form = isAdd ? this.formAdicionar : this.formEditar;
+                    const hiddenField = form.querySelector(`[name="${fieldName}"]`);
+                    if (hiddenField) {
+                        hiddenField.value = base64;
+                    }
+                    
+                    // Atualizar botão
+                    const cameraBtn = form.querySelector(`[data-field="${fieldName}"]`);
+                    if (cameraBtn) {
+                        cameraBtn.innerHTML = '✓ Foto Capturada';
+                        cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    }
+                    
+                    this.showStatus('Foto capturada com sucesso!', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        input.click();
+    }
+    
+    resetCameraButtons() {
+        const cameraButtons = document.querySelectorAll('.btn-camera');
+        cameraButtons.forEach(btn => {
+            btn.innerHTML = '📷 Tirar Foto';
+            btn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+        });
+    }
+    
+    toggleConditionalFields(aprovacao) {
+        const isAdd = this.modalAdicionar.style.display === 'block';
+        const camposCondicionais = document.getElementById(isAdd ? 'camposCondicionaisAdd' : 'camposCondicionais');
+        
+        if (camposCondicionais) {
+            camposCondicionais.style.display = aprovacao === 'Condicional' ? 'block' : 'none';
+            
+            if (aprovacao === 'Condicional') {
+                this.loadTiposDefeitos(isAdd);
+                this.loadLideres(isAdd);
+                this.initSignaturePad(isAdd);
+            }
+        }
+    }
+    
+    async loadTiposDefeitos(isAdd) {
+        try {
+            const response = await fetch('/api/tipos-defeitos');
+            const tipos = await response.json();
+            
+            const select = document.getElementById(isAdd ? 'razaoCondicionalAdd' : 'razaoCondicional');
+            if (select) {
+                select.innerHTML = '<option value="">Selecione</option>';
+                tipos.forEach(tipo => {
+                    select.add(new Option(tipo.tipo_defeito, tipo.tipo_defeito));
+                });
+                
+                // Adicionar event listener para carregar descrições
+                select.addEventListener('change', (e) => {
+                    this.loadDescricoesDefeitos(e.target.value, isAdd);
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar tipos de defeitos:', error);
+        }
+    }
+    
+    async loadDescricoesDefeitos(tipoDefeito, isAdd) {
+        const descSelect = document.getElementById(isAdd ? 'descricaoRazaoCondicionalAdd' : 'descricaoRazaoCondicional');
+        if (!descSelect) return;
+        
+        descSelect.innerHTML = '<option value="">Selecione</option>';
+        
+        if (!tipoDefeito) return;
+        
+        try {
+            const response = await fetch(`/api/descricoes-defeitos/${encodeURIComponent(tipoDefeito)}`);
+            const descricoes = await response.json();
+            
+            descricoes.forEach(desc => {
+                descSelect.add(new Option(desc, desc));
+            });
+        } catch (error) {
+            console.error('Erro ao carregar descrições de defeitos:', error);
+        }
+    }
+    
+    async loadLideres(isAdd) {
+        try {
+            const response = await fetch('/api/lideres');
+            const lideres = await response.json();
+            
+            const select = document.getElementById(isAdd ? 'liberacaoLiderAdd' : 'liberacaoLider');
+            if (select) {
+                select.innerHTML = '<option value="">Selecione</option>';
+                lideres.forEach(lider => {
+                    select.add(new Option(lider, lider));
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar líderes:', error);
+        }
+    }
+    
+    initSignaturePad(isAdd) {
+        const canvas = document.getElementById(isAdd ? 'assinaturaCanvasAdd' : 'assinaturaCanvas');
+        const clearBtn = document.getElementById(isAdd ? 'limparAssinaturaAdd' : 'limparAssinatura');
+        const hiddenField = document.getElementById(isAdd ? 'assinaturaLiderAdd' : 'assinaturaLider');
+        
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        const getEventPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            if (e.touches && e.touches[0]) {
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        };
+        
+        const startDrawing = (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getEventPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+        };
+        
+        const draw = (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            
+            const pos = getEventPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            lastX = pos.x;
+            lastY = pos.y;
+        };
+        
+        const stopDrawing = (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            isDrawing = false;
+            hiddenField.value = canvas.toDataURL();
+        };
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch events para dispositivos móveis
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+        
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hiddenField.value = '';
+        });
     }
 }
 
