@@ -367,15 +367,15 @@
                             </div>
                             <div class="form-row">
                                 <label>Motivo Bloqueio:</label>
-                                <select name="motivo_bloqueio" multiple>
-                                    <option value="Marca de lixa">Marca de lixa</option>
-                                    <option value="Risco">Risco</option>
-                                    <option value="Raspão">Raspão</option>
-                                    <option value="Abrasão">Abrasão</option>
-                                    <option value="Marca de tinta">Marca de tinta</option>
-                                    <option value="Marca d'água">Marca d'água</option>
-                                    <option value="Marca de matriz">Marca de matriz</option>
-                                </select>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de lixa"> Marca de lixa</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Risco"> Risco</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Raspão"> Raspão</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Abrasão"> Abrasão</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de tinta"> Marca de tinta</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca d'água"> Marca d'água</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de matriz"> Marca de matriz</label>
+                                </div>
                             </div>
                             <div class="form-row">
                                 <label>Intensidade Bloqueio:</label>
@@ -791,15 +791,15 @@
                             </div>
                             <div class="form-row">
                                 <label>Motivo Bloqueio:</label>
-                                <select name="motivo_bloqueio" multiple>
-                                    <option value="Marca de lixa">Marca de lixa</option>
-                                    <option value="Risco">Risco</option>
-                                    <option value="Raspão">Raspão</option>
-                                    <option value="Abrasão">Abrasão</option>
-                                    <option value="Marca de tinta">Marca de tinta</option>
-                                    <option value="Marca d'água">Marca d'água</option>
-                                    <option value="Marca de matriz">Marca de matriz</option>
-                                </select>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de lixa"> Marca de lixa</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Risco"> Risco</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Raspão"> Raspão</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Abrasão"> Abrasão</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de tinta"> Marca de tinta</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca d'água"> Marca d'água</label>
+                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de matriz"> Marca de matriz</label>
+                                </div>
                             </div>
                             <div class="form-row">
                                 <label>Intensidade Bloqueio:</label>
@@ -880,6 +880,5 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/motivo-bloqueio.js') }}"></script>
 </body>
 </html>
