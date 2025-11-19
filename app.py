@@ -45,10 +45,10 @@ def get_inspecoes():
     """
     
     if search:
-        query = base_query + " AND (serial ILIKE %s OR op::text ILIKE %s OR codigo_de_barras ILIKE %s OR peca ILIKE %s OR (peca || op::text) ILIKE %s OR projeto ILIKE %s OR veiculo ILIKE %s) ORDER BY id DESC LIMIT 100"
+        query = base_query + " AND (serial ILIKE %s OR op::text ILIKE %s OR codigo_de_barras ILIKE %s OR peca ILIKE %s OR (peca || op::text) ILIKE %s OR projeto ILIKE %s OR veiculo ILIKE %s) ORDER BY data DESC, id DESC LIMIT 100"
         cur.execute(query, (f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%'))
     else:
-        query = base_query + " AND data >= CURRENT_DATE - INTERVAL '1 month' ORDER BY id DESC LIMIT 50"
+        query = base_query + " AND data >= CURRENT_DATE - INTERVAL '1 month' ORDER BY data DESC, id DESC LIMIT 50"
         cur.execute(query)
     
     inspecoes = cur.fetchall()
@@ -104,7 +104,7 @@ def get_lideres():
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
         SELECT nome_completo FROM operadores_producao 
-        WHERE operacao_ou_lideranca = 'Líder' AND fabrica = 'Graffeno - Jarinu'
+        WHERE operacao_ou_lideranca = 'Líder' AND fabrica = 'Graffeno - Jarinu' and setor = 'Inspeção Final'
         ORDER BY nome_completo
     """)
     lideres = cur.fetchall()

@@ -303,6 +303,16 @@ h1 {
     to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
 .status-bar.show {
     display: block;
 }
@@ -691,4 +701,152 @@ body.modal-open .btn-float {
         max-width: 80px;
         font-size: 10px;
     }
+}
+/* Checkbox Group Styles */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.checkbox-item:hover {
+    background-color: #f5f5f5;
+}
+
+.checkbox-item input[type="checkbox"] {
+    margin: 0;
+    transform: scale(1.2);
+}
+
+.checkbox-item input[type="checkbox"]:checked + span,
+.checkbox-item:has(input[type="checkbox"]:checked) {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+/* Signature Container */
+.signature-container {
+    position: relative;
+    display: inline-block;
+}
+
+.signature-clear-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+
+.signature-clear-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    color: #333;
+    transform: scale(1.1);
+}
+/* Larger form elements */
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row select,
+.form-row textarea {
+    padding: 12px;
+    font-size: 16px;
+    min-height: 48px;
+}
+
+.btn-turno {
+    padding: 12px 16px;
+    font-size: 16px;
+    min-height: 48px;
+}
+
+.btn-camera {
+    padding: 12px 16px;
+    font-size: 16px;
+    min-height: 48px;
+}
+
+.form-actions .btn {
+    padding: 16px 24px;
+    font-size: 18px;
+    min-height: 56px;
+}
+/* Photo Container */
+.photo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.photo-preview {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+/* Motivo Bloqueio Dropdown */
+.motivo-bloqueio-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.motivo-dropdown {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.motivo-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.motivo-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.motivo-checkbox:hover {
+    background: #e3f2fd;
+}
+
+.motivo-checkbox input[type="checkbox"]:checked + span {
+    font-weight: bold;
+}
+
+.motivo-checkbox:has(input[type="checkbox"]:checked) {
+    background: #e3f2fd;
+    border-color: #2196f3;
 }

@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>📋 Inspeção Final - Graffeno Jarinu</h1>
+            <h1>📋 Inspeção Final</h1>
         </header>
 
         <div class="filters">
@@ -52,11 +52,11 @@
                         </div>
                         <div class="form-row">
                             <label>Código de Barras:</label>
-                            <input type="text" name="codigo_de_barras" required placeholder="Digite o código de barras">
+                            <input type="text" name="codigo_de_barras" required placeholder="Digite o código de barras" maxlength="8">
                         </div>
                         <div class="form-row">
                             <label>Serial:</label>
-                            <input type="text" name="serial" required placeholder="Digite o serial">
+                            <input type="text" name="serial" required placeholder="Digite o serial" maxlength="6">
                         </div>
                         <!-- Campos hidden para armazenar dados -->
                         <input type="hidden" name="peca">
@@ -90,12 +90,12 @@
                         </div>
                         <div class="form-row" id="meioMedicaoAdd" style="display: none;">
                             <label>Meio Medição Curvatura:</label>
-                            <select name="meio_medicao_curvatura">
-                                <option value="">Selecione</option>
-                                <option value="Gabarito">Gabarito</option>
-                                <option value="Galga">Galga</option>
-                                <option value="Matriz">Matriz</option>
-                            </select>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Gabarito" data-field="meio_medicao_curvatura">Gabarito</button>
+                                <button type="button" class="btn-turno" data-turno="Galga" data-field="meio_medicao_curvatura">Galga</button>
+                                <button type="button" class="btn-turno" data-turno="Matriz" data-field="meio_medicao_curvatura">Matriz</button>
+                            </div>
+                            <input type="hidden" name="meio_medicao_curvatura" id="meioMedicaoCurvaturaAdd">
                         </div>
                         
                         <!-- Campos Perimetrais (ocultos inicialmente) -->
@@ -272,8 +272,7 @@
                             </div>
                         </div>
                         
-                        <!-- Campos Gerais -->
-                        <div class="form-row"><label>Resistência:</label><input type="text" name="resistencia"></div>
+                        <div class="form-row" id="resistenciaFieldAdd" style="display: none;"><label>Resistência:</label><input type="text" name="resistencia"></div>
                         
                         <!-- Campos Mesa -->
                         <div class="form-row">
@@ -304,8 +303,8 @@
                             </div>
                             <div class="form-row">
                                 <label>Imagem Sensor:</label>
-                                <button type="button" class="btn-camera" data-field="imagem_sensor">📷 Tirar Foto</button>
-                                <input type="hidden" name="imagem_sensor">
+                                <button type="button" class="btn-camera" data-field="foto_sensor">📷 Tirar Foto</button>
+                                <input type="hidden" name="foto_sensor">
                             </div>
                             <div class="form-row">
                                 <label>Aço:</label>
@@ -326,26 +325,26 @@
                             </div>
                             
                             <!-- Campos Offset -->
-                            <div class="form-row"><label>Offset 1:</label><input type="number" step="0.01" name="offset_1"></div>
-                            <div class="form-row"><label>Offset 2:</label><input type="number" step="0.01" name="offset_2"></div>
-                            <div class="form-row"><label>Offset 3:</label><input type="number" step="0.01" name="offset_3"></div>
-                            <div class="form-row"><label>Offset 4:</label><input type="number" step="0.01" name="offset_4"></div>
-                            <div class="form-row"><label>Offset 5:</label><input type="number" step="0.01" name="offset_5"></div>
-                            <div class="form-row"><label>Offset 6:</label><input type="number" step="0.01" name="offset_6"></div>
-                            <div class="form-row"><label>Offset 7:</label><input type="number" step="0.01" name="offset_7"></div>
-                            <div class="form-row"><label>Offset 8:</label><input type="number" step="0.01" name="offset_8"></div>
-                            <div class="form-row"><label>Offset 9:</label><input type="number" step="0.01" name="offset_9"></div>
-                            <div class="form-row"><label>Offset 10:</label><input type="number" step="0.01" name="offset_10"></div>
-                            <div class="form-row"><label>Offset 11:</label><input type="number" step="0.01" name="offset_11"></div>
-                            <div class="form-row"><label>Offset 12:</label><input type="number" step="0.01" name="offset_12"></div>
-                            <div class="form-row"><label>Offset 13:</label><input type="number" step="0.01" name="offset_13"></div>
-                            <div class="form-row"><label>Offset 14:</label><input type="number" step="0.01" name="offset_14"></div>
-                            <div class="form-row"><label>Offset 15:</label><input type="number" step="0.01" name="offset_15"></div>
-                            <div class="form-row"><label>Offset 16:</label><input type="number" step="0.01" name="offset_16"></div>
-                            <div class="form-row"><label>Offset 17:</label><input type="number" step="0.01" name="offset_17"></div>
-                            <div class="form-row"><label>Offset 18:</label><input type="number" step="0.01" name="offset_18"></div>
-                            <div class="form-row"><label>Offset 19:</label><input type="number" step="0.01" name="offset_19"></div>
-                            <div class="form-row"><label>Offset 20:</label><input type="number" step="0.01" name="offset_20"></div>
+                            <div class="form-row"><label>Offset 1:</label><input type="text" name="offset_mm_1"></div>
+                            <div class="form-row"><label>Offset 2:</label><input type="text" name="offset_mm_2"></div>
+                            <div class="form-row"><label>Offset 3:</label><input type="text" name="offset_mm_3"></div>
+                            <div class="form-row"><label>Offset 4:</label><input type="text" name="offset_mm_4"></div>
+                            <div class="form-row"><label>Offset 5:</label><input type="text" name="offset_mm_5"></div>
+                            <div class="form-row"><label>Offset 6:</label><input type="text" name="offset_mm_6"></div>
+                            <div class="form-row"><label>Offset 7:</label><input type="text" name="offset_mm_7"></div>
+                            <div class="form-row"><label>Offset 8:</label><input type="text" name="offset_mm_8"></div>
+                            <div class="form-row"><label>Offset 9:</label><input type="text" name="offset_mm_9"></div>
+                            <div class="form-row"><label>Offset 10:</label><input type="text" name="offset_mm_10"></div>
+                            <div class="form-row"><label>Offset 11:</label><input type="text" name="offset_mm_11"></div>
+                            <div class="form-row"><label>Offset 12:</label><input type="text" name="offset_mm_12"></div>
+                            <div class="form-row"><label>Offset 13:</label><input type="text" name="offset_mm_13"></div>
+                            <div class="form-row"><label>Offset 14:</label><input type="text" name="offset_mm_14"></div>
+                            <div class="form-row"><label>Offset 15:</label><input type="text" name="offset_mm_15"></div>
+                            <div class="form-row"><label>Offset 16:</label><input type="text" name="offset_mm_16"></div>
+                            <div class="form-row"><label>Offset 17:</label><input type="text" name="offset_mm_17"></div>
+                            <div class="form-row"><label>Offset 18:</label><input type="text" name="offset_mm_18"></div>
+                            <div class="form-row"><label>Offset 19:</label><input type="text" name="offset_mm_19"></div>
+                            <div class="form-row"><label>Offset 20:</label><input type="text" name="offset_mm_20"></div>
                             <div class="form-row"><label>Espessura (mm):</label><input type="number" step="0.01" name="espessura_mm"></div>
                         </div>
                         
@@ -410,7 +409,7 @@
                             <input type="hidden" name="a_peca_foi_aprovada" id="pecaAprovadaAdd">
                         </div>
                         
-                        <!-- Campos Condicionais (só aparecem se Condicional) -->
+                        <!-- Campos Condicionais -->
                         <div id="camposCondicionaisAdd" style="display: none;">
                             <div class="form-row">
                                 <label>Razão Condicional:</label>
@@ -419,7 +418,7 @@
                                 </select>
                             </div>
                             <div class="form-row">
-                                <label>Descrição Razão Condicional:</label>
+                                <label>Descrição Razão:</label>
                                 <select name="descricao_razao_condicional" id="descricaoRazaoCondicionalAdd">
                                     <option value="">Selecione</option>
                                 </select>
@@ -431,12 +430,12 @@
                                 </select>
                             </div>
                             <div class="form-row">
-                                <label>Assinatura Líder:</label>
-                                <canvas id="assinaturaCanvasAdd" width="400" height="150" style="border: 2px solid #e8eaed; border-radius: 8px; cursor: crosshair;"></canvas>
-                                <div style="margin-top: 10px;">
-                                    <button type="button" id="limparAssinaturaAdd" class="btn btn-secondary">🗑️ Limpar</button>
+                                <label>Assinatura Liberação:</label>
+                                <div class="signature-container">
+                                    <canvas id="assinaturaCanvasAdd" width="400" height="150" style="border: 1px solid #ccc; border-radius: 4px;"></canvas>
+                                    <button type="button" id="limparAssinaturaAdd" class="signature-clear-btn">×</button>
                                 </div>
-                                <input type="hidden" name="assinatura_lider" id="assinaturaLiderAdd">
+                                <input type="hidden" name="assinatura_liberacao" id="assinaturaLiderAdd">
                             </div>
                         </div>
                         
@@ -476,11 +475,22 @@
                         </div>
                         <div class="form-row">
                             <label>Código de Barras:</label>
-                            <input type="text" name="codigo_de_barras">
+                            <input type="text" name="codigo_de_barras" maxlength="8">
                         </div>
                         <div class="form-row">
                             <label>Serial:</label>
-                            <input type="text" name="serial">
+                            <input type="text" name="serial" maxlength="6">
+                        </div>
+                        <!-- Campos hidden para armazenar dados -->
+                        <input type="hidden" name="peca">
+                        <input type="hidden" name="op">
+                        <input type="hidden" name="projeto">
+                        <input type="hidden" name="veiculo">
+                        <input type="hidden" name="produto">
+                        
+                        <div class="form-row" id="sensorField" style="display: none;">
+                            <label>Sensor:</label>
+                            <input type="text" name="sensor" placeholder="Digite o sensor">
                         </div>
                         <div class="form-row">
                             <label>Descrição:</label>
@@ -503,12 +513,12 @@
                         </div>
                         <div class="form-row" id="meioMedicao" style="display: none;">
                             <label>Meio Medição Curvatura:</label>
-                            <select name="meio_medicao_curvatura">
-                                <option value="">Selecione</option>
-                                <option value="Gabarito">Gabarito</option>
-                                <option value="Galga">Galga</option>
-                                <option value="Matriz">Matriz</option>
-                            </select>
+                            <div class="btn-group">
+                                <button type="button" class="btn-turno" data-turno="Gabarito" data-field="meio_medicao_curvatura">Gabarito</button>
+                                <button type="button" class="btn-turno" data-turno="Galga" data-field="meio_medicao_curvatura">Galga</button>
+                                <button type="button" class="btn-turno" data-turno="Matriz" data-field="meio_medicao_curvatura">Matriz</button>
+                            </div>
+                            <input type="hidden" name="meio_medicao_curvatura" id="meioMedicaoCurvatura">
                         </div>
                         
                         <!-- Campos Perimetrais (ocultos inicialmente) -->
@@ -686,7 +696,7 @@
                         </div>
                         
                         <!-- Campos Gerais -->
-                        <div class="form-row"><label>Resistência:</label><input type="text" name="resistencia"></div>
+                        <div class="form-row" id="resistenciaField" style="display: none;"><label>Resistência:</label><input type="text" name="resistencia"></div>
                         
                         <!-- Campos Mesa -->
                         <div class="form-row">
@@ -717,8 +727,8 @@
                             </div>
                             <div class="form-row">
                                 <label>Imagem Sensor:</label>
-                                <button type="button" class="btn-camera" data-field="imagem_sensor">📷 Tirar Foto</button>
-                                <input type="hidden" name="imagem_sensor">
+                                <button type="button" class="btn-camera" data-field="foto_sensor">📷 Tirar Foto</button>
+                                <input type="hidden" name="foto_sensor">
                             </div>
                             <div class="form-row">
                                 <label>Aço:</label>
@@ -739,26 +749,26 @@
                             </div>
                             
                             <!-- Campos Offset -->
-                            <div class="form-row"><label>Offset 1:</label><input type="number" step="0.01" name="offset_1"></div>
-                            <div class="form-row"><label>Offset 2:</label><input type="number" step="0.01" name="offset_2"></div>
-                            <div class="form-row"><label>Offset 3:</label><input type="number" step="0.01" name="offset_3"></div>
-                            <div class="form-row"><label>Offset 4:</label><input type="number" step="0.01" name="offset_4"></div>
-                            <div class="form-row"><label>Offset 5:</label><input type="number" step="0.01" name="offset_5"></div>
-                            <div class="form-row"><label>Offset 6:</label><input type="number" step="0.01" name="offset_6"></div>
-                            <div class="form-row"><label>Offset 7:</label><input type="number" step="0.01" name="offset_7"></div>
-                            <div class="form-row"><label>Offset 8:</label><input type="number" step="0.01" name="offset_8"></div>
-                            <div class="form-row"><label>Offset 9:</label><input type="number" step="0.01" name="offset_9"></div>
-                            <div class="form-row"><label>Offset 10:</label><input type="number" step="0.01" name="offset_10"></div>
-                            <div class="form-row"><label>Offset 11:</label><input type="number" step="0.01" name="offset_11"></div>
-                            <div class="form-row"><label>Offset 12:</label><input type="number" step="0.01" name="offset_12"></div>
-                            <div class="form-row"><label>Offset 13:</label><input type="number" step="0.01" name="offset_13"></div>
-                            <div class="form-row"><label>Offset 14:</label><input type="number" step="0.01" name="offset_14"></div>
-                            <div class="form-row"><label>Offset 15:</label><input type="number" step="0.01" name="offset_15"></div>
-                            <div class="form-row"><label>Offset 16:</label><input type="number" step="0.01" name="offset_16"></div>
-                            <div class="form-row"><label>Offset 17:</label><input type="number" step="0.01" name="offset_17"></div>
-                            <div class="form-row"><label>Offset 18:</label><input type="number" step="0.01" name="offset_18"></div>
-                            <div class="form-row"><label>Offset 19:</label><input type="number" step="0.01" name="offset_19"></div>
-                            <div class="form-row"><label>Offset 20:</label><input type="number" step="0.01" name="offset_20"></div>
+                            <div class="form-row"><label>Offset 1:</label><input type="text" name="offset_mm_1"></div>
+                            <div class="form-row"><label>Offset 2:</label><input type="text" name="offset_mm_2"></div>
+                            <div class="form-row"><label>Offset 3:</label><input type="text" name="offset_mm_3"></div>
+                            <div class="form-row"><label>Offset 4:</label><input type="text" name="offset_mm_4"></div>
+                            <div class="form-row"><label>Offset 5:</label><input type="text" name="offset_mm_5"></div>
+                            <div class="form-row"><label>Offset 6:</label><input type="text" name="offset_mm_6"></div>
+                            <div class="form-row"><label>Offset 7:</label><input type="text" name="offset_mm_7"></div>
+                            <div class="form-row"><label>Offset 8:</label><input type="text" name="offset_mm_8"></div>
+                            <div class="form-row"><label>Offset 9:</label><input type="text" name="offset_mm_9"></div>
+                            <div class="form-row"><label>Offset 10:</label><input type="text" name="offset_mm_10"></div>
+                            <div class="form-row"><label>Offset 11:</label><input type="text" name="offset_mm_11"></div>
+                            <div class="form-row"><label>Offset 12:</label><input type="text" name="offset_mm_12"></div>
+                            <div class="form-row"><label>Offset 13:</label><input type="text" name="offset_mm_13"></div>
+                            <div class="form-row"><label>Offset 14:</label><input type="text" name="offset_mm_14"></div>
+                            <div class="form-row"><label>Offset 15:</label><input type="text" name="offset_mm_15"></div>
+                            <div class="form-row"><label>Offset 16:</label><input type="text" name="offset_mm_16"></div>
+                            <div class="form-row"><label>Offset 17:</label><input type="text" name="offset_mm_17"></div>
+                            <div class="form-row"><label>Offset 18:</label><input type="text" name="offset_mm_18"></div>
+                            <div class="form-row"><label>Offset 19:</label><input type="text" name="offset_mm_19"></div>
+                            <div class="form-row"><label>Offset 20:</label><input type="text" name="offset_mm_20"></div>
                             <div class="form-row"><label>Espessura (mm):</label><input type="number" step="0.01" name="espessura_mm"></div>
                         </div>
                         
@@ -823,7 +833,7 @@
                             <input type="hidden" name="a_peca_foi_aprovada" id="pecaAprovada">
                         </div>
                         
-                        <!-- Campos Condicionais (só aparecem se Condicional) -->
+                        <!-- Campos Condicionais -->
                         <div id="camposCondicionais" style="display: none;">
                             <div class="form-row">
                                 <label>Razão Condicional:</label>
@@ -832,7 +842,7 @@
                                 </select>
                             </div>
                             <div class="form-row">
-                                <label>Descrição Razão Condicional:</label>
+                                <label>Descrição Razão:</label>
                                 <select name="descricao_razao_condicional" id="descricaoRazaoCondicional">
                                     <option value="">Selecione</option>
                                 </select>
@@ -844,12 +854,12 @@
                                 </select>
                             </div>
                             <div class="form-row">
-                                <label>Assinatura Líder:</label>
-                                <canvas id="assinaturaCanvas" width="400" height="150" style="border: 2px solid #e8eaed; border-radius: 8px; cursor: crosshair;"></canvas>
-                                <div style="margin-top: 10px;">
-                                    <button type="button" id="limparAssinatura" class="btn btn-secondary">🗑️ Limpar</button>
+                                <label>Assinatura Liberação:</label>
+                                <div class="signature-container">
+                                    <canvas id="assinaturaCanvas" width="400" height="150" style="border: 1px solid #ccc; border-radius: 4px;"></canvas>
+                                    <button type="button" id="limparAssinatura" class="signature-clear-btn">×</button>
                                 </div>
-                                <input type="hidden" name="assinatura_lider" id="assinaturaLider">
+                                <input type="hidden" name="assinatura_liberacao" id="assinaturaLider">
                             </div>
                         </div>
                         

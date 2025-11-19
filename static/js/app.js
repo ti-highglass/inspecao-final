@@ -52,12 +52,7 @@ class AppSheetInspecao {
             this.processCodigoBarras(e.target.value);
         });
 
-        // Fechar modal clicando fora
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                this.closeModals();
-            }
-        });
+
         
         // Botões de câmera
         document.addEventListener('click', (e) => {
@@ -68,7 +63,13 @@ class AppSheetInspecao {
     }
 
     async loadData() {
-        const search = document.getElementById('searchGeral').value;
+        const searchField = document.getElementById('searchGeral');
+        if (!searchField) {
+            console.error('Campo de busca não encontrado');
+            return;
+        }
+        
+        const search = searchField.value;
         let url = '/api/inspecoes';
         
         const params = new URLSearchParams();
@@ -79,17 +80,27 @@ class AppSheetInspecao {
             url += '?' + params.toString();
         }
         
+        console.log('Carregando dados da URL:', url);
         this.showStatus('Carregando...', 'info');
         
         try {
             const response = await fetch(url);
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             const data = await response.json();
+            console.log('Dados recebidos:', data);
+            
             this.renderTable(data);
             const tabName = this.getTabName(this.currentTab);
             const msg = search ? `${data.length} registros encontrados em ${tabName}` : `${data.length} registros em ${tabName}`;
             this.showStatus(msg, 'success');
         } catch (error) {
-            this.showStatus('Erro ao carregar dados', 'error');
+            console.error('Erro ao carregar dados:', error);
+            this.showStatus(`Erro ao carregar dados: ${error.message}`, 'error');
         }
     }
     
@@ -103,6 +114,11 @@ class AppSheetInspecao {
     }
 
     renderTable(data) {
+        if (!this.cardsContainer) {
+            console.error('cardsContainer não encontrado');
+            return;
+        }
+        
         this.cardsContainer.innerHTML = '';
         this.selectedRows.clear();
         
@@ -225,6 +241,9 @@ class AppSheetInspecao {
                     case 'logo':
                         hiddenFieldId = isAdd ? 'logoAdd' : 'logo';
                         break;
+                    case 'meio_medicao_curvatura':
+                        hiddenFieldId = isAdd ? 'meioMedicaoCurvaturaAdd' : 'meioMedicaoCurvatura';
+                        break;
                     case 'intensidade_bloqueio':
                         hiddenFieldId = isAdd ? 'intensidadeBloqueioAdd' : 'intensidadeBloqueio';
                         break;
@@ -305,28 +324,104 @@ class AppSheetInspecao {
             this.editingId = id;
             
             // Preencher todos os campos do formulário
+            console.log('Preenchendo campos com dados:', data);
             Object.keys(data).forEach(key => {
                 const input = this.formEditar.querySelector(`[name="${key}"]`);
-                if (input) {
-                    if (input.type === 'date' && data[key]) {
+                
+                if (input && data[key] !== null && data[key] !== undefined && data[key] !== '') {
+                    console.log(`Preenchendo ${key} com valor:`, data[key]);
+                    
+                    if (input.type === 'date') {
                         const date = new Date(data[key]);
                         input.value = date.toISOString().split('T')[0];
+                    } else if (input.tagName === 'SELECT') {
+                        input.value = String(data[key]);
+                        if (input.multiple) {
+                            const values = Array.isArray(data[key]) ? data[key] : [data[key]];
+                            Array.from(input.options).forEach(option => {
+                                option.selected = values.includes(option.value);
+                            });
+                        }
                     } else {
-                        input.value = data[key] || '';
+                        input.value = String(data[key]);
                     }
+                    
+                    console.log(`Campo ${key} preenchido com:`, input.value);
                 }
             });
+            
+            // Mostrar campo sensor se for PBS
+            const sensorField = document.getElementById('sensorField');
+            if (data.peca === 'PBS' && sensorField) {
+                sensorField.style.display = 'block';
+            } else if (sensorField) {
+                sensorField.style.display = 'none';
+            }
             
             // Gerar descrição se tiver dados
             if (data.peca && data.projeto && data.veiculo && data.produto) {
                 const descricao = this.gerarDescricao(data.peca, data.sensor, data.projeto, data.veiculo, data.produto);
                 this.formEditar.querySelector('[name="descricao_carro"]').value = descricao;
+                
+                // Mostrar campo resistência se projeto for 484 ou 485
+                const resistenciaField = document.getElementById('resistenciaField');
+                if (resistenciaField) {
+                    resistenciaField.style.display = (data.projeto === '484' || data.projeto === '485') ? 'block' : 'none';
+                }
             }
             
-            // Mostrar campos dimensionais se turno preenchido
+            // Limpar botões ativos antes de ativar novos
+            document.querySelectorAll('#modalEditar .btn-turno').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Ativar botões baseados nos valores salvos
+            this.activateButtonsFromData(data);
+            
+            // Mostrar campos relacionados baseados nos dados
             if (data.turno_dimensional) {
+                document.getElementById('inspDimensional').style.display = 'block';
+                document.getElementById('meioMedicao').style.display = 'block';
                 document.getElementById('camposPerimetrais').style.display = 'block';
                 document.getElementById('camposCurvatura').style.display = 'block';
+            }
+            if (data.turno_destape) {
+                document.getElementById('inspDestape').style.display = 'block';
+            }
+            if (data.turno_din) {
+                document.getElementById('camposDinDetalhes').style.display = 'block';
+            }
+            if (data.turno_mesa) {
+                document.getElementById('camposMesa').style.display = 'block';
+            }
+            if (data.turno_bloqueio) {
+                document.getElementById('camposBloqueio').style.display = 'block';
+            }
+            if (data.peca === 'PBS' || data.peca === 'VGA') {
+                document.getElementById('camposDin').style.display = 'block';
+            }
+            
+            // Forçar exibição de campos com dados
+            const hasPerimetralData = Object.keys(data).some(key => key.startsWith('perimetral_') && data[key]);
+            const hasCurvaturaData = Object.keys(data).some(key => key.startsWith('curvatura_') && data[key]);
+            const hasOffsetData = Object.keys(data).some(key => key.startsWith('offset_mm_') && data[key]);
+            const hasMesaData = data.turno_mesa || data.insp_resp_mesa || data.aco || data.logo || data.espessura_mm;
+            
+            console.log('Verificando dados:', {
+                hasPerimetralData,
+                hasCurvaturaData, 
+                hasOffsetData,
+                hasMesaData,
+                offsetKeys: Object.keys(data).filter(k => k.startsWith('offset_mm_'))
+            });
+            
+            if (hasPerimetralData || hasCurvaturaData) {
+                document.getElementById('camposPerimetrais').style.display = 'block';
+                document.getElementById('camposCurvatura').style.display = 'block';
+            }
+            
+            if (hasMesaData) {
+                document.getElementById('camposMesa').style.display = 'block';
             }
             
             this.initDimensionalToggle();
@@ -334,6 +429,45 @@ class AppSheetInspecao {
             console.log('Abrindo modal...');
             this.modalEditar.style.display = 'block';
             document.body.classList.add('modal-open');
+            
+            // Forçar preenchimento após modal abrir
+            setTimeout(() => {
+                console.log('Forçando preenchimento dos campos...');
+                
+                // Mostrar campos com dados primeiro
+                const hasPerimetralData = Object.keys(data).some(key => key.startsWith('perimetral_') && data[key]);
+                const hasCurvaturaData = Object.keys(data).some(key => key.startsWith('curvatura_') && data[key]);
+                const hasOffsetData = Object.keys(data).some(key => key.startsWith('offset_mm_') && data[key]);
+                const hasMesaData = data.turno_mesa || data.insp_resp_mesa || data.aco || data.logo || data.espessura_mm;
+                
+                if (hasPerimetralData || hasCurvaturaData) {
+                    document.getElementById('camposPerimetrais').style.display = 'block';
+                    document.getElementById('camposCurvatura').style.display = 'block';
+                }
+                
+                if (hasMesaData) {
+                    document.getElementById('camposMesa').style.display = 'block';
+                }
+                
+                // Preencher todos os campos incluindo offsets
+                Object.keys(data).forEach(key => {
+                    const input = this.formEditar.querySelector(`[name="${key}"]`);
+                    if (input && data[key] !== null && data[key] !== undefined && data[key] !== '') {
+                        input.value = String(data[key]);
+                        if (key.startsWith('offset_mm_')) {
+                            console.log(`OFFSET ${key} preenchido:`, input.value);
+                        }
+                    }
+                });
+                
+                console.log('Campos offset no DOM:', 
+                    Array.from(document.querySelectorAll('#modalEditar [name^="offset_mm_"]')).map(el => ({
+                        name: el.name,
+                        value: el.value,
+                        visible: el.offsetParent !== null
+                    }))
+                );
+            }, 300);
             
         } catch (error) {
             console.error('Erro completo:', error);
@@ -480,6 +614,12 @@ class AppSheetInspecao {
                     // Gerar descrição
                     const descricao = this.gerarDescricao(peca, sensor, projeto, veiculo, produto);
                     this.formAdicionar.querySelector('[name="descricao_carro"]').value = descricao;
+                    
+                    // Mostrar campo resistência se projeto for 484 ou 485
+                    const resistenciaField = document.getElementById('resistenciaFieldAdd');
+                    if (resistenciaField) {
+                        resistenciaField.style.display = (projeto === '484' || projeto === '485') ? 'block' : 'none';
+                    }
                 }
             } catch (error) {
                 console.error('Erro ao buscar dados da OP:', error);
@@ -527,27 +667,45 @@ class AppSheetInspecao {
     async handleEditarSubmit(e) {
         e.preventDefault();
         
+        console.log('Iniciando edição, ID:', this.editingId);
+        
+        if (!this.editingId) {
+            console.error('ID de edição não definido');
+            this.showStatus('Erro: ID de edição não encontrado', 'error');
+            return;
+        }
+        
         const formData = new FormData(this.formEditar);
         const data = Object.fromEntries(formData.entries());
         
+        console.log('Dados do formulário de edição:', data);
+        
         try {
-            const response = await fetch(`/api/inspecoes/${this.editingId}`, {
+            const url = `/api/inspecoes/${this.editingId}`;
+            console.log('URL de edição:', url);
+            
+            const response = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             
+            console.log('Response status:', response.status);
+            
             const result = await response.json();
+            console.log('Resultado da edição:', result);
             
             if (result.success) {
                 this.closeModals();
                 this.loadData();
-                this.showStatus('Inspeção atualizada com sucesso!', 'success');
+                this.showSuccessPopup('Inspeção atualizada com sucesso!');
             } else {
+                console.error('Erro do servidor:', result.error);
                 this.showStatus('Erro: ' + (result.error || 'Erro desconhecido'), 'error');
             }
         } catch (error) {
-            this.showStatus('Erro ao atualizar inspeção', 'error');
+            console.error('Erro na requisição de edição:', error);
+            this.showStatus('Erro ao atualizar inspeção: ' + error.message, 'error');
         }
     }
 
@@ -592,6 +750,34 @@ class AppSheetInspecao {
         setTimeout(() => {
             this.statusBar.classList.remove('show');
         }, 4000);
+    }
+    
+    showSuccessPopup(message) {
+        const popup = document.createElement('div');
+        popup.className = 'success-popup';
+        popup.textContent = message;
+        popup.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+        `;
+        
+        document.body.appendChild(popup);
+        
+        setTimeout(() => {
+            popup.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                document.body.removeChild(popup);
+            }, 300);
+        }, 3000);
     }
     
     async openCamera(fieldName) {
@@ -662,11 +848,16 @@ class AppSheetInspecao {
                     hiddenField.value = base64;
                 }
                 
-                // Atualizar botão para mostrar que foto foi capturada
+                // Atualizar botão e mostrar preview
                 const cameraBtn = form.querySelector(`[data-field="${fieldName}"]`);
+                const preview = document.getElementById(`preview_${fieldName}`);
                 if (cameraBtn) {
                     cameraBtn.innerHTML = '✓ Foto Capturada';
                     cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                }
+                if (preview) {
+                    preview.src = base64;
+                    preview.style.display = 'block';
                 }
                 
                 this.showStatus('Foto capturada com sucesso!', 'success');
@@ -703,11 +894,16 @@ class AppSheetInspecao {
                         hiddenField.value = base64;
                     }
                     
-                    // Atualizar botão
+                    // Atualizar botão e mostrar preview
                     const cameraBtn = form.querySelector(`[data-field="${fieldName}"]`);
+                    const preview = document.getElementById(`preview_${fieldName}`);
                     if (cameraBtn) {
                         cameraBtn.innerHTML = '✓ Foto Capturada';
                         cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    }
+                    if (preview) {
+                        preview.src = base64;
+                        preview.style.display = 'block';
                     }
                     
                     this.showStatus('Foto capturada com sucesso!', 'success');
@@ -799,6 +995,67 @@ class AppSheetInspecao {
         } catch (error) {
             console.error('Erro ao carregar líderes:', error);
         }
+    }
+    
+    activateButtonsFromData(data) {
+        console.log('Ativando botões com dados:', data);
+        
+        const buttonFields = [
+            'turno_destape', 'turno_dimensional', 'turno_din', 'turno_mesa', 'turno_bloqueio',
+            'aco', 'logo', 'intensidade_bloqueio', 'serigrafia_ok', 'a_peca_foi_aprovada',
+            'dupla_imagem', 'distorcao'
+        ];
+        
+        buttonFields.forEach(field => {
+            if (data[field]) {
+                console.log(`Ativando campo ${field} com valor:`, data[field]);
+                
+                // Encontrar botões com o campo correspondente no modal de edição
+                const buttons = document.querySelectorAll(`#modalEditar [data-field="${field}"]`);
+                console.log(`Botões encontrados para ${field}:`, buttons.length);
+                
+                buttons.forEach(btn => {
+                    console.log(`Verificando botão:`, btn.dataset.turno, 'vs', data[field]);
+                    if (btn.dataset.turno === data[field]) {
+                        btn.classList.add('active');
+                        console.log(`Botão ${field} ativado:`, btn.dataset.turno);
+                        
+                        // Definir valor no campo hidden
+                        const hiddenField = document.getElementById(this.getHiddenFieldId(field, false));
+                        if (hiddenField) {
+                            hiddenField.value = data[field];
+                            console.log(`Campo hidden ${field} definido:`, hiddenField.value);
+                        }
+                        
+                        // Mostrar campos relacionados
+                        this.toggleRelatedFields(field, data[field]);
+                    }
+                });
+            }
+        });
+        
+        // Mostrar campos condicionais se aprovado como "Condicional"
+        if (data.a_peca_foi_aprovada === 'Condicional') {
+            this.toggleConditionalFields('Condicional');
+        }
+    }
+    
+    getHiddenFieldId(field, isAdd) {
+        const fieldMap = {
+            'turno_destape': isAdd ? 'turnoDestapeAdd' : 'turnoDestape',
+            'turno_dimensional': isAdd ? 'turnoDimensionalAdd' : 'turnoDimensional',
+            'turno_din': isAdd ? 'turnoDinAdd' : 'turnoDin',
+            'turno_mesa': isAdd ? 'turnoMesaAdd' : 'turnoMesa',
+            'turno_bloqueio': isAdd ? 'turnoBloqueioAdd' : 'turnoBloqueio',
+            'aco': isAdd ? 'acoAdd' : 'aco',
+            'logo': isAdd ? 'logoAdd' : 'logo',
+            'intensidade_bloqueio': isAdd ? 'intensidadeBloqueioAdd' : 'intensidadeBloqueio',
+            'serigrafia_ok': isAdd ? 'serigrafiaOkAdd' : 'serigrafiaOk',
+            'a_peca_foi_aprovada': isAdd ? 'pecaAprovadaAdd' : 'pecaAprovada',
+            'dupla_imagem': isAdd ? 'duplaImagemAdd' : 'duplaImagem',
+            'distorcao': isAdd ? 'distorcaoAdd' : 'distorcao'
+        };
+        return fieldMap[field] || '';
     }
     
     initSignaturePad(isAdd) {
