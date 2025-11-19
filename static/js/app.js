@@ -633,9 +633,16 @@ class AppSheetInspecao {
         const formData = new FormData(this.formAdicionar);
         const data = Object.fromEntries(formData.entries());
         
-        // Adicionar data atual e fábrica
-        data.data = new Date().toISOString().split('T')[0];
+        // Adicionar data/hora atual do Brasil e fábrica
+        const now = new Date();
+        const brasiliaTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+        data.data = brasiliaTime.toISOString();
         data.fabrica = 'Graffeno - Jarinu';
+        
+        // Adicionar data_finalizacao se aprovada
+        if (data.a_peca_foi_aprovada && ['Sim', 'Não', 'Condicional'].includes(data.a_peca_foi_aprovada)) {
+            data.data_finalizacao = brasiliaTime.toISOString();
+        }
         
         console.log('Dados do formulário:', data);
         console.log('Peça:', data.peca);

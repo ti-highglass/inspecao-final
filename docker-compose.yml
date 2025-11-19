@@ -1,0 +1,19 @@
+services:
+  app-pu:
+    build: .
+    container_name: inspecao-final
+    image: inspecao-final
+    ports:
+      - "9010:9010"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-2}
+      - GUNICORN_WORKER_CLASS=${GUNICORN_WORKER_CLASS:-gthread}
+      - GUNICORN_THREADS=${GUNICORN_THREADS:-4}
+      - GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-120}
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped

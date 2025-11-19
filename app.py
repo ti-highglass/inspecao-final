@@ -76,7 +76,7 @@ def get_operadores():
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
         SELECT nome_completo FROM operadores_producao 
-        WHERE setor = 'Inspeção Final' AND fabrica = 'Graffeno - Jarinu'
+        WHERE setor = 'Inspeção Final' AND fabrica = 'Graffeno - Jarinu' and operacao_ou_lideranca = 'Operador'
         ORDER BY nome_completo
     """)
     operadores = cur.fetchall()
@@ -168,9 +168,9 @@ def create_inspecao():
 def update_inspecao(id):
     data = request.json
     
-    # Se a_peca_foi_aprovada for Sim, Não ou Condicional, adicionar data_finalizacao
+    # Se a_peca_foi_aprovada for Sim, Não ou Condicional, adicionar data_finalizacao no horário de Brasília
     if data.get('a_peca_foi_aprovada') in ['Sim', 'Não', 'Condicional']:
-        data['data_finalizacao'] = 'NOW()'
+        data['data_finalizacao'] = "NOW() AT TIME ZONE 'America/Sao_Paulo'"
     
     conn = get_db_connection()
     cur = conn.cursor()
@@ -209,5 +209,5 @@ def delete_inspecao(id):
 
 if __name__ == '__main__':
     print("Sistema de Inspeção Final iniciado!")
-    print("Acesse: http://localhost:9000")
-    app.run(debug=True, host='0.0.0.0', port=9000)
+    print("Acesse: http://localhost:9010")
+    app.run(debug=True, host='0.0.0.0', port=9010)
