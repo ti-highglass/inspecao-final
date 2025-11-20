@@ -14,6 +14,7 @@ class AppSheetInspecao {
         this.initTurnoButtons();
         this.initTabs();
         this.currentTab = 'aprovadas';
+        this.toggleAddButton();
         this.loadData();
     }
 
@@ -141,6 +142,20 @@ class AppSheetInspecao {
             card.className = 'inspection-card';
             card.dataset.id = row.id;
             
+            // Verificar etapas pendentes apenas na aba 'Em Inspeção'
+            let etapasPendentes = '';
+            if (this.currentTab === 'inspecao' && status === 'Em Inspeção') {
+                const pendentes = this.verificarEtapasPendentes(row);
+                if (pendentes.length > 0) {
+                    etapasPendentes = `
+                        <div class="etapas-pendentes">
+                            <span class="pendentes-label">Pendente:</span>
+                            <span class="pendentes-list">${pendentes.join(', ')}</span>
+                        </div>
+                    `;
+                }
+            }
+            
             card.innerHTML = `
                 <div class="card-header">
                     <h3 class="card-title">${descricao}</h3>
@@ -164,6 +179,7 @@ class AppSheetInspecao {
                         <span class="info-value">${row.data ? this.formatarData(row.data) : '-'}</span>
                     </div>
                 </div>
+                ${etapasPendentes}
                 <div class="card-actions">
                     <button class="card-edit-btn" data-id="${row.id}">✏️ Editar</button>
                 </div>
@@ -326,27 +342,47 @@ class AppSheetInspecao {
             // Preencher todos os campos do formulário
             console.log('Preenchendo campos com dados:', data);
             Object.keys(data).forEach(key => {
-                const input = this.formEditar.querySelector(`[name="${key}"]`);
-                
-                if (input && data[key] !== null && data[key] !== undefined && data[key] !== '') {
-                    console.log(`Preenchendo ${key} com valor:`, data[key]);
+                if (key === 'motivo_bloqueio') {
+                    // Tratar motivo_bloqueio especialmente
+                    this.preencherMotivoBloqueio(data[key], false);
+                } else if (['ficha_tecnica_frente', 'ficha_tecnica_verso', 'foto_sensor'].includes(key) && data[key]) {
+                    // Tratar campos de foto especialmente
+                    const input = this.formEditar.querySelector(`[name="${key}"]`);
+                    const preview = document.getElementById(`preview_${key}`);
+                    const cameraBtn = this.formEditar.querySelector(`[data-field="${key}"]`);
                     
-                    if (input.type === 'date') {
-                        const date = new Date(data[key]);
-                        input.value = date.toISOString().split('T')[0];
-                    } else if (input.tagName === 'SELECT') {
-                        input.value = String(data[key]);
-                        if (input.multiple) {
-                            const values = Array.isArray(data[key]) ? data[key] : [data[key]];
-                            Array.from(input.options).forEach(option => {
-                                option.selected = values.includes(option.value);
-                            });
-                        }
-                    } else {
-                        input.value = String(data[key]);
+                    if (input) input.value = data[key];
+                    if (preview) {
+                        preview.src = data[key];
+                        preview.style.display = 'block';
                     }
+                    if (cameraBtn) {
+                        cameraBtn.innerHTML = '✓ Foto Capturada';
+                        cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    }
+                } else {
+                    const input = this.formEditar.querySelector(`[name="${key}"]`);
                     
-                    console.log(`Campo ${key} preenchido com:`, input.value);
+                    if (input && data[key] !== null && data[key] !== undefined && data[key] !== '') {
+                        console.log(`Preenchendo ${key} com valor:`, data[key]);
+                        
+                        if (input.type === 'date') {
+                            const date = new Date(data[key]);
+                            input.value = date.toISOString().split('T')[0];
+                        } else if (input.tagName === 'SELECT') {
+                            input.value = String(data[key]);
+                            if (input.multiple) {
+                                const values = Array.isArray(data[key]) ? data[key] : [data[key]];
+                                Array.from(input.options).forEach(option => {
+                                    option.selected = values.includes(option.value);
+                                });
+                            }
+                        } else {
+                            input.value = String(data[key]);
+                        }
+                        
+                        console.log(`Campo ${key} preenchido com:`, input.value);
+                    }
                 }
             });
             
@@ -482,6 +518,34 @@ class AppSheetInspecao {
         this.modalEditar.style.display = 'none';
         document.body.classList.remove('modal-open');
         this.editingId = null;
+        
+        // Limpar formulários ao cancelar
+        this.formAdicionar.reset();
+        this.formEditar.reset();
+        
+        // Limpar botões ativos
+        document.querySelectorAll('.btn-turno.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Limpar campos hidden
+        document.querySelectorAll('input[type="hidden"]').forEach(input => {
+            input.value = '';
+        });
+        
+        // Ocultar campos condicionais
+        document.querySelectorAll('[id*="campos"]').forEach(campo => {
+            if (campo.style) campo.style.display = 'none';
+        });
+        
+        // Resetar botões de câmera
+        this.resetCameraButtons();
+        
+        // Ocultar previews de foto
+        document.querySelectorAll('.photo-preview').forEach(preview => {
+            preview.style.display = 'none';
+            preview.src = '';
+        });
     }
 
     async loadOperadores() {
@@ -548,6 +612,8 @@ class AppSheetInspecao {
                 e.target.classList.add('active');
                 // Define aba atual
                 this.currentTab = e.target.dataset.tab;
+                // Controlar visibilidade do botão adicionar
+                this.toggleAddButton();
                 // Recarrega dados
                 this.loadData();
             });
@@ -630,8 +696,27 @@ class AppSheetInspecao {
     async handleAdicionarSubmit(e) {
         e.preventDefault();
         
+        // Mostrar popup de salvamento
+        this.showSavingPopup();
+        
         const formData = new FormData(this.formAdicionar);
         const data = Object.fromEntries(formData.entries());
+        
+        // Coletar motivos de bloqueio selecionados
+        const motivosBloqueio = [];
+        this.formAdicionar.querySelectorAll('input[name="motivo_bloqueio"]:checked').forEach(cb => {
+            motivosBloqueio.push(cb.value);
+        });
+        if (motivosBloqueio.length > 0) {
+            data.motivo_bloqueio = motivosBloqueio.join(', ');
+        }
+        
+        // Remover campos vazios para evitar problemas no banco
+        Object.keys(data).forEach(key => {
+            if (data[key] === '' || data[key] === null || data[key] === undefined) {
+                delete data[key];
+            }
+        });
         
         // Adicionar data/hora atual do Brasil e fábrica
         const now = new Date();
@@ -657,15 +742,18 @@ class AppSheetInspecao {
             
             const result = await response.json();
             
+            this.hideSavingPopup();
+            
             if (result.success) {
                 this.closeModals();
                 this.loadData();
-                this.showStatus('Inspeção adicionada com sucesso!', 'success');
+                this.showSuccessPopup('Inspeção adicionada com sucesso!');
             } else {
                 console.error('Erro do servidor:', result.error);
                 this.showStatus('Erro: ' + (result.error || 'Erro desconhecido'), 'error');
             }
         } catch (error) {
+            this.hideSavingPopup();
             console.error('Erro na requisição:', error);
             this.showStatus('Erro ao salvar inspeção', 'error');
         }
@@ -682,8 +770,20 @@ class AppSheetInspecao {
             return;
         }
         
+        // Mostrar popup de salvamento
+        this.showSavingPopup();
+        
         const formData = new FormData(this.formEditar);
         const data = Object.fromEntries(formData.entries());
+        
+        // Coletar motivos de bloqueio selecionados
+        const motivosBloqueio = [];
+        this.formEditar.querySelectorAll('input[name="motivo_bloqueio"]:checked').forEach(cb => {
+            motivosBloqueio.push(cb.value);
+        });
+        if (motivosBloqueio.length > 0) {
+            data.motivo_bloqueio = motivosBloqueio.join(', ');
+        }
         
         console.log('Dados do formulário de edição:', data);
         
@@ -702,6 +802,8 @@ class AppSheetInspecao {
             const result = await response.json();
             console.log('Resultado da edição:', result);
             
+            this.hideSavingPopup();
+            
             if (result.success) {
                 this.closeModals();
                 this.loadData();
@@ -711,6 +813,7 @@ class AppSheetInspecao {
                 this.showStatus('Erro: ' + (result.error || 'Erro desconhecido'), 'error');
             }
         } catch (error) {
+            this.hideSavingPopup();
             console.error('Erro na requisição de edição:', error);
             this.showStatus('Erro ao atualizar inspeção: ' + error.message, 'error');
         }
@@ -788,8 +891,8 @@ class AppSheetInspecao {
     }
     
     async openCamera(fieldName) {
-        // Fallback para input file em dispositivos móveis
-        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        // Fallback para input file em dispositivos móveis ou se não há suporte à câmera
+        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             this.openFileInput(fieldName);
             return;
         }
@@ -857,7 +960,8 @@ class AppSheetInspecao {
                 
                 // Atualizar botão e mostrar preview
                 const cameraBtn = form.querySelector(`[data-field="${fieldName}"]`);
-                const preview = document.getElementById(`preview_${fieldName}`);
+                const previewId = isAdd ? `preview_${fieldName}_add` : `preview_${fieldName}`;
+                const preview = document.getElementById(previewId);
                 if (cameraBtn) {
                     cameraBtn.innerHTML = '✓ Foto Capturada';
                     cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
@@ -903,7 +1007,8 @@ class AppSheetInspecao {
                     
                     // Atualizar botão e mostrar preview
                     const cameraBtn = form.querySelector(`[data-field="${fieldName}"]`);
-                    const preview = document.getElementById(`preview_${fieldName}`);
+                    const previewId = isAdd ? `preview_${fieldName}_add` : `preview_${fieldName}`;
+                    const preview = document.getElementById(previewId);
                     if (cameraBtn) {
                         cameraBtn.innerHTML = '✓ Foto Capturada';
                         cameraBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
@@ -1063,6 +1168,326 @@ class AppSheetInspecao {
             'distorcao': isAdd ? 'distorcaoAdd' : 'distorcao'
         };
         return fieldMap[field] || '';
+    }
+    
+    preencherMotivoBloqueio(motivos, isAdd) {
+        if (!motivos) return;
+        
+        const dropdownId = isAdd ? 'motivoBloqueioDropdownAdd' : 'motivoBloqueioDropdown';
+        const textId = isAdd ? 'motivoBloqueioTextAdd' : 'motivoBloqueioText';
+        const dropdown = document.getElementById(dropdownId);
+        
+        if (!dropdown) return;
+        
+        // Limpar seleções anteriores
+        dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // Converter string em array se necessário
+        let motivosArray = [];
+        if (typeof motivos === 'string') {
+            // Se for uma string separada por vírgulas
+            motivosArray = motivos.split(',').map(m => m.trim());
+        } else if (Array.isArray(motivos)) {
+            motivosArray = motivos;
+        }
+        
+        // Marcar checkboxes correspondentes
+        motivosArray.forEach(motivo => {
+            const checkbox = dropdown.querySelector(`input[value="${motivo}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+        
+        // Atualizar texto do dropdown
+        const textElement = document.getElementById(textId);
+        const checkedBoxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+        
+        if (checkedBoxes.length === 0) {
+            textElement.textContent = 'Selecione os motivos';
+        } else if (checkedBoxes.length === 1) {
+            textElement.textContent = checkedBoxes[0].value;
+        } else {
+            textElement.textContent = `${checkedBoxes.length} motivos selecionados`;
+        }
+    }
+    
+    showSavingPopup() {
+        const popup = document.createElement('div');
+        popup.id = 'savingPopup';
+        popup.className = 'saving-popup';
+        popup.innerHTML = `
+            <div class="saving-content">
+                <div class="spinner"></div>
+                <span>Salvando inspeção...</span>
+            </div>
+        `;
+        popup.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+        `;
+        
+        const content = popup.querySelector('.saving-content');
+        content.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        `;
+        
+        const spinner = popup.querySelector('.spinner');
+        spinner.style.cssText = `
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        `;
+        
+        // Adicionar CSS da animação se não existir
+        if (!document.querySelector('#spinnerCSS')) {
+            const style = document.createElement('style');
+            style.id = 'spinnerCSS';
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(popup);
+    }
+    
+    hideSavingPopup() {
+        const popup = document.getElementById('savingPopup');
+        if (popup) {
+            document.body.removeChild(popup);
+        }
+    }
+    
+    verificarEtapasPendentes(row) {
+        const pendentes = [];
+        
+        // Verificar etapas obrigatórias
+        if (!row.turno_destape) pendentes.push('Destape');
+        if (!row.turno_dimensional) pendentes.push('Dimensional');
+        if (!row.turno_mesa) pendentes.push('Mesa');
+        if (!row.turno_bloqueio) pendentes.push('Bloqueio');
+        
+        // Verificar DIN apenas para PBS e VGA
+        if ((row.peca === 'PBS' || row.peca === 'VGA') && !row.turno_din) {
+            pendentes.push('DIN');
+        }
+        
+        return pendentes;
+    }
+    
+    toggleAddButton() {
+        const btnFloat = document.getElementById('btnNovoFloat');
+        if (btnFloat) {
+            if (this.currentTab === 'aprovadas') {
+                btnFloat.style.display = 'flex';
+            } else {
+                btnFloat.style.display = 'none';
+            }
+        }
+    }
+    
+    abrirModalImagem(isAdd) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>📷 Adicionar Imagem de Defeito</h2>
+                    <span class="close" onclick="document.body.removeChild(this.closest('.modal'))">&times;</span>
+                </div>
+                <form id="formImagem">
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label>Problema Encontrado:</label>
+                            <select id="tipoDefeitoImg" required>
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Descrição:</label>
+                            <select id="descricaoDefeitoImg" required>
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Imagem:</label>
+                            <button type="button" class="btn-camera" onclick="app.capturarImagemDefeito()">📷 Tirar Foto</button>
+                            <img id="previewImagemDefeito" style="display: none; width: 200px; height: 150px; margin-top: 10px;">
+                            <input type="hidden" id="imagemDefeitoBase64">
+                        </div>
+                        <div class="form-row">
+                            <label>Observação:</label>
+                            <textarea id="observacaoImg" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="document.body.removeChild(this.closest('.modal'))">❌ Cancelar</button>
+                        <button type="submit" class="btn btn-primary">💾 Salvar Imagem</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        this.carregarTiposDefeitosImg();
+        
+        // Event listener para o form
+        document.getElementById('formImagem').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.salvarImagem(isAdd);
+        });
+        
+        // Event listener para mudança de tipo de defeito
+        document.getElementById('tipoDefeitoImg').addEventListener('change', (e) => {
+            this.carregarDescricoesDefeitosImg(e.target.value);
+        });
+    }
+    
+    async carregarTiposDefeitosImg() {
+        try {
+            const response = await fetch('/api/tipos-defeitos');
+            const tipos = await response.json();
+            const select = document.getElementById('tipoDefeitoImg');
+            tipos.forEach(tipo => {
+                select.add(new Option(tipo.tipo_defeito, tipo.tipo_defeito));
+            });
+        } catch (error) {
+            console.error('Erro ao carregar tipos de defeitos:', error);
+        }
+    }
+    
+    async carregarDescricoesDefeitosImg(tipoDefeito) {
+        const select = document.getElementById('descricaoDefeitoImg');
+        select.innerHTML = '<option value="">Selecione</option>';
+        
+        if (!tipoDefeito) return;
+        
+        try {
+            const response = await fetch(`/api/descricoes-defeitos/${encodeURIComponent(tipoDefeito)}`);
+            const descricoes = await response.json();
+            descricoes.forEach(desc => {
+                select.add(new Option(desc, desc));
+            });
+        } catch (error) {
+            console.error('Erro ao carregar descrições:', error);
+        }
+    }
+    
+    capturarImagemDefeito() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    document.getElementById('imagemDefeitoBase64').value = base64;
+                    const preview = document.getElementById('previewImagemDefeito');
+                    preview.src = base64;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        input.click();
+    }
+    
+    async salvarImagem(isAdd) {
+        const data = {
+            problema_encontrado: document.getElementById('tipoDefeitoImg').value,
+            descricao: document.getElementById('descricaoDefeitoImg').value,
+            imagem: document.getElementById('imagemDefeitoBase64').value,
+            observacao: document.getElementById('observacaoImg').value || '',
+            inspecao_ref: isAdd ? 'temp' : this.editingId
+        };
+        
+        if (!data.problema_encontrado || !data.descricao || !data.imagem) {
+            alert('Preencha todos os campos obrigatórios');
+            return;
+        }
+        
+        // Não salvar se for modo adicionar (temp)
+        if (isAdd) {
+            alert('Salve a inspeção primeiro antes de adicionar imagens');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/imagens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                document.body.removeChild(document.querySelector('.modal:last-child'));
+                this.carregarImagensLista(isAdd);
+                this.showStatus('Imagem adicionada com sucesso!', 'success');
+            }
+        } catch (error) {
+            console.error('Erro ao salvar imagem:', error);
+            this.showStatus('Erro ao salvar imagem', 'error');
+        }
+    }
+    
+    async carregarImagensLista(isAdd) {
+        const inspecaoId = isAdd ? 'temp' : this.editingId;
+        const container = document.getElementById(isAdd ? 'imagensListaAdd' : 'imagensLista');
+        
+        if (inspecaoId === 'temp') {
+            container.innerHTML = '<p>Imagens serão carregadas após salvar a inspeção</p>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/imagens/${inspecaoId}`);
+            const imagens = await response.json();
+            
+            container.innerHTML = imagens.map(img => `
+                <div class="imagem-item">
+                    <img src="${img.imagem}" style="width: 100px; height: 75px; object-fit: cover;">
+                    <div class="imagem-info">
+                        <strong>${img.problema_encontrado}</strong><br>
+                        ${img.descricao}<br>
+                        <small>${img.observacao || ''}</small>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Erro ao carregar imagens:', error);
+        }
     }
     
     initSignaturePad(isAdd) {

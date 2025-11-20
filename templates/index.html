@@ -295,16 +295,19 @@
                                 <label>Ficha Técnica Frente:</label>
                                 <button type="button" class="btn-camera" data-field="ficha_tecnica_frente">📷 Tirar Foto</button>
                                 <input type="hidden" name="ficha_tecnica_frente">
+                                <img id="preview_ficha_tecnica_frente_add" class="photo-preview" style="display: none; width: 150px; height: 100px; margin-top: 10px;">
                             </div>
                             <div class="form-row">
                                 <label>Ficha Técnica Verso:</label>
                                 <button type="button" class="btn-camera" data-field="ficha_tecnica_verso">📷 Tirar Foto</button>
                                 <input type="hidden" name="ficha_tecnica_verso">
+                                <img id="preview_ficha_tecnica_verso_add" class="photo-preview" style="display: none; width: 150px; height: 100px; margin-top: 10px;">
                             </div>
                             <div class="form-row">
                                 <label>Imagem Sensor:</label>
                                 <button type="button" class="btn-camera" data-field="foto_sensor">📷 Tirar Foto</button>
                                 <input type="hidden" name="foto_sensor">
+                                <img id="preview_foto_sensor_add" class="photo-preview" style="display: none; width: 150px; height: 100px; margin-top: 10px;">
                             </div>
                             <div class="form-row">
                                 <label>Aço:</label>
@@ -367,14 +370,20 @@
                             </div>
                             <div class="form-row">
                                 <label>Motivo Bloqueio:</label>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de lixa"> Marca de lixa</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Risco"> Risco</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Raspão"> Raspão</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Abrasão"> Abrasão</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de tinta"> Marca de tinta</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca d'água"> Marca d'água</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de matriz"> Marca de matriz</label>
+                                <div class="dropdown-checkbox" id="motivoBloqueioDropdownAdd">
+                                    <div class="dropdown-header" onclick="toggleDropdown('motivoBloqueioDropdownAdd')">
+                                        <span id="motivoBloqueioTextAdd">Selecione os motivos</span>
+                                        <span>▼</span>
+                                    </div>
+                                    <div class="dropdown-options">
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca de lixa"> Marca de lixa</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Risco"> Risco</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Raspão"> Raspão</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Abrasão"> Abrasão</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca de tinta"> Marca de tinta</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca d'água"> Marca d'água</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca de matriz"> Marca de matriz</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -440,6 +449,12 @@
                         </div>
                         
                         <div class="form-row"><label>Observação:</label><textarea name="observacao" rows="3"></textarea></div>
+                        
+                        <!-- Seção de Imagens -->
+                        <div class="form-row">
+                            <label>Imagens de Defeitos:</label>
+                            <p style="color: #666; font-size: 14px; margin: 5px 0;">As imagens podem ser adicionadas após salvar a inspeção</p>
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-cancel">❌ Cancelar</button>
@@ -719,16 +734,19 @@
                                 <label>Ficha Técnica Frente:</label>
                                 <button type="button" class="btn-camera" data-field="ficha_tecnica_frente">📷 Tirar Foto</button>
                                 <input type="hidden" name="ficha_tecnica_frente">
+                                <img id="preview_ficha_tecnica_frente" class="photo-preview" style="display: none; width: 150px; height: 100px; margin-top: 10px;">
                             </div>
                             <div class="form-row">
                                 <label>Ficha Técnica Verso:</label>
                                 <button type="button" class="btn-camera" data-field="ficha_tecnica_verso">📷 Tirar Foto</button>
                                 <input type="hidden" name="ficha_tecnica_verso">
+                                <img id="preview_ficha_tecnica_verso" class="photo-preview" style="display: none; width: 150px; height: 100px; margin-top: 10px;">
                             </div>
                             <div class="form-row">
                                 <label>Imagem Sensor:</label>
                                 <button type="button" class="btn-camera" data-field="foto_sensor">📷 Tirar Foto</button>
                                 <input type="hidden" name="foto_sensor">
+                                <img id="preview_foto_sensor" class="photo-preview" style="display: none; width: 150px; height: 100px; margin-top: 10px;">
                             </div>
                             <div class="form-row">
                                 <label>Aço:</label>
@@ -791,14 +809,20 @@
                             </div>
                             <div class="form-row">
                                 <label>Motivo Bloqueio:</label>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de lixa"> Marca de lixa</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Risco"> Risco</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Raspão"> Raspão</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Abrasão"> Abrasão</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de tinta"> Marca de tinta</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca d'água"> Marca d'água</label>
-                                    <label class="checkbox-item"><input type="checkbox" name="motivo_bloqueio" value="Marca de matriz"> Marca de matriz</label>
+                                <div class="dropdown-checkbox" id="motivoBloqueioDropdown">
+                                    <div class="dropdown-header" onclick="toggleDropdown('motivoBloqueioDropdown')">
+                                        <span id="motivoBloqueioText">Selecione os motivos</span>
+                                        <span>▼</span>
+                                    </div>
+                                    <div class="dropdown-options">
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca de lixa"> Marca de lixa</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Risco"> Risco</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Raspão"> Raspão</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Abrasão"> Abrasão</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca de tinta"> Marca de tinta</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca d'água"> Marca d'água</label>
+                                        <label><input type="checkbox" name="motivo_bloqueio" value="Marca de matriz"> Marca de matriz</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -864,6 +888,13 @@
                         </div>
                         
                         <div class="form-row"><label>Observação:</label><textarea name="observacao" rows="3"></textarea></div>
+                        
+                        <!-- Seção de Imagens -->
+                        <div class="form-row">
+                            <label>Imagens de Defeitos:</label>
+                            <button type="button" id="btnAdicionarImagem" class="btn-add-image">📷 Adicionar Imagem</button>
+                            <div id="imagensLista" class="imagens-lista"></div>
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-cancel">❌ Cancelar</button>
@@ -880,5 +911,62 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Função para controlar o dropdown de motivo bloqueio
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            const options = dropdown.querySelector('.dropdown-options');
+            const isVisible = options.classList.contains('show');
+            
+            // Fechar todos os dropdowns abertos
+            document.querySelectorAll('.dropdown-options.show').forEach(opt => {
+                opt.classList.remove('show');
+            });
+            
+            // Abrir o dropdown clicado se não estava aberto
+            if (!isVisible) {
+                options.classList.add('show');
+            }
+        }
+        
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-checkbox')) {
+                document.querySelectorAll('.dropdown-options.show').forEach(opt => {
+                    opt.classList.remove('show');
+                });
+            }
+        });
+        
+        // Atualizar texto do dropdown quando checkboxes são selecionados
+        function updateDropdownText(dropdownId, textId) {
+            const dropdown = document.getElementById(dropdownId);
+            const textElement = document.getElementById(textId);
+            const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+            
+            if (checkboxes.length === 0) {
+                textElement.textContent = 'Selecione os motivos';
+            } else if (checkboxes.length === 1) {
+                textElement.textContent = checkboxes[0].value;
+            } else {
+                textElement.textContent = `${checkboxes.length} motivos selecionados`;
+            }
+        }
+        
+        // Event listeners para os checkboxes
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox' && e.target.name === 'motivo_bloqueio') {
+                const dropdown = e.target.closest('.dropdown-checkbox');
+                const dropdownId = dropdown.id;
+                const textId = dropdownId === 'motivoBloqueioDropdownAdd' ? 'motivoBloqueioTextAdd' : 'motivoBloqueioText';
+                updateDropdownText(dropdownId, textId);
+            }
+        });
+        
+        // Event listener para botão de imagem (apenas edição)
+        document.getElementById('btnAdicionarImagem').addEventListener('click', () => {
+            app.abrirModalImagem(false);
+        });
+    </script>
 </body>
 </html>

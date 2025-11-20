@@ -339,13 +339,13 @@ h1 {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: #1a73e8;
     color: white;
     border: none;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 300;
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(26,115,232,0.4);
@@ -568,15 +568,92 @@ body.modal-open .btn-float {
     background: #1a73e8;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 20px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
     transition: background 0.3s;
 }
 
 .card-edit-btn:hover {
     background: #1557b0;
+}
+
+/* Etapas Pendentes */
+.etapas-pendentes {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-size: 13px;
+}
+
+.pendentes-label {
+    font-weight: 600;
+    color: #856404;
+}
+
+.pendentes-list {
+    color: #856404;
+    margin-left: 5px;
+}
+
+/* Imagens Lista */
+.imagens-lista {
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e8eaed;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.imagem-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+}
+
+.imagem-item:last-child {
+    border-bottom: none;
+}
+
+.imagem-info {
+    flex: 1;
+    font-size: 13px;
+}
+
+/* Botão Adicionar Imagem */
+.btn-add-image {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.btn-add-image:hover {
+    background: linear-gradient(135deg, #ee5a24 0%, #d63031 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4);
+}
+
+.btn-add-image:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
 }
 
 /* Responsividade */
@@ -867,20 +944,28 @@ body.modal-open .btn-float {
 }
 
 .dropdown-header {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 16px 20px;
+    border: 2px solid #e8eaed;
+    border-radius: 8px;
     background: white;
     cursor: pointer;
     font-size: 16px;
-    min-height: 48px;
+    min-height: 50px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    user-select: none;
 }
 
 .dropdown-header:hover {
-    border-color: #2196f3;
+    border-color: #1a73e8;
+}
+
+.dropdown-header:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
 }
 
 .dropdown-options {
@@ -890,13 +975,25 @@ body.modal-open .btn-float {
     left: 0;
     right: 0;
     background: white;
-    border: 1px solid #ddd;
+    border: 2px solid #1a73e8;
     border-top: none;
-    border-radius: 0 0 4px 4px;
-    max-height: 200px;
+    border-radius: 0 0 8px 8px;
+    max-height: 250px;
     overflow-y: auto;
     z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    animation: dropdownSlideDown 0.2s ease;
+}
+
+@keyframes dropdownSlideDown {
+    from { 
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .dropdown-options.show {
@@ -906,15 +1003,18 @@ body.modal-open .btn-float {
 .dropdown-options label {
     display: flex;
     align-items: center;
-    padding: 12px;
+    padding: 8px 12px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
-    font-size: 16px;
-    gap: 8px;
+    font-size: 14px;
+    gap: 6px;
+    transition: background-color 0.2s;
+    margin: 0;
+    font-weight: 400;
 }
 
 .dropdown-options label:hover {
-    background: #f5f5f5;
+    background: #f8f9fa;
 }
 
 .dropdown-options label:last-child {
@@ -923,7 +1023,27 @@ body.modal-open .btn-float {
 
 .dropdown-options input[type="checkbox"] {
     margin: 0;
-    transform: scale(1.2);
+    width: 16px;
+    height: 16px;
+    accent-color: #1a73e8;
+    flex-shrink: 0;
+}
+
+.dropdown-options label:has(input[type="checkbox"]:checked) {
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+/* Seta do dropdown */
+.dropdown-header span:last-child {
+    transition: transform 0.2s;
+    color: #5f6368;
+    font-size: 12px;
+}
+
+.dropdown-checkbox:has(.dropdown-options.show) .dropdown-header span:last-child {
+    transform: rotate(180deg);
 }
 /* Checkbox Group Compact */
 .checkbox-group {

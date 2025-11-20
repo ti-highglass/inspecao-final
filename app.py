@@ -38,7 +38,8 @@ def get_inspecoes():
         tab_filter = "AND a_peca_foi_aprovada = 'Avaliação'"
     
     base_query = f"""
-        SELECT id, data, serial, codigo_de_barras, op, peca, projeto, veiculo, produto, sensor, a_peca_foi_aprovada
+        SELECT id, data, serial, codigo_de_barras, op, peca, projeto, veiculo, produto, sensor, a_peca_foi_aprovada,
+               turno_destape, turno_dimensional, turno_din, turno_mesa, turno_bloqueio
         FROM insp_final_checklist 
         WHERE fabrica = 'Graffeno - Jarinu' 
         {tab_filter}
@@ -138,8 +139,12 @@ def get_inspecao(id):
 
 @app.route('/api/inspecoes', methods=['POST'])
 def create_inspecao():
+    import uuid
     data = request.json
     print(f"Dados recebidos: {data}")
+    
+    # Gerar UUID para o ID
+    data['id'] = str(uuid.uuid4())
     
     conn = get_db_connection()
     cur = conn.cursor()
@@ -207,7 +212,48 @@ def delete_inspecao(id):
         conn.close()
         return jsonify({'error': str(e)}), 400
 
+@app.route('/api/imagens/<inspecao_id>', methods=['GET'])
+def get_imagens(inspecao_id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute('SELECT * FROM insp_final_imagens WHERE inspecao_ref = %s ORDER BY data DESC', (inspecao_id,))
+    imagens = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([dict(img) for img in imagens])
+
+@app.route('/api/imagens', methods=['POST'])
+def create_imagem():
+    import uuid
+    data = request.json
+    
+    # Gerar UUID para o ID
+    data['id'] = str(uuid.uuid4())
+    
+    # Adicionar data/hora atual
+    from datetime import datetime
+    data['data'] = datetime.now().isoformat()
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    columns = ', '.join(data.keys())
+    placeholders = ', '.join(['%s'] * len(data))
+    query = f'INSERT INTO insp_final_imagens ({columns}) VALUES ({placeholders})'
+    
+    try:
+        cur.execute(query, list(data.values()))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({'error': str(e)}), 400
+
 if __name__ == '__main__':
     print("Sistema de Inspeção Final iniciado!")
-    print("Acesse: http://localhost:9010")
+    print("Acesse: http://10.150.16.45:9010")
     app.run(debug=True, host='0.0.0.0', port=9010)
