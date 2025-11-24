@@ -20,6 +20,7 @@
             <button class="tab-btn active" data-tab="aprovadas">Aprovadas</button>
             <button class="tab-btn" data-tab="inspecao">Em Inspeção</button>
             <button class="tab-btn" data-tab="avaliacao">Aguardando Avaliação</button>
+            <button class="tab-btn" data-tab="relatorio">Relatório Diário</button>
         </div>
 
         <div class="cards-container" id="cardsContainer">
@@ -453,7 +454,8 @@
                         <!-- Seção de Imagens -->
                         <div class="form-row">
                             <label>Imagens de Defeitos:</label>
-                            <p style="color: #666; font-size: 14px; margin: 5px 0;">As imagens podem ser adicionadas após salvar a inspeção</p>
+                            <button type="button" id="btnAdicionarImagemAdd" class="btn-add-image">📷 Adicionar Imagem</button>
+                            <div id="imagensListaAdd" class="imagens-lista"></div>
                         </div>
                     </div>
                     <div class="form-actions">
@@ -963,7 +965,11 @@
             }
         });
         
-        // Event listener para botão de imagem (apenas edição)
+        // Event listeners para botões de imagem
+        document.getElementById('btnAdicionarImagemAdd').addEventListener('click', () => {
+            app.abrirModalImagem(true);
+        });
+        
         document.getElementById('btnAdicionarImagem').addEventListener('click', () => {
             app.abrirModalImagem(false);
         });

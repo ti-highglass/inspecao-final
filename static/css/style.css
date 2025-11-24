@@ -1078,3 +1078,51 @@ body.modal-open .btn-float {
     background-color: #e3f2fd;
     border-color: #2196f3;
 }
+
+/* Relatório Cards */
+.relatorio-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    transition: all 0.3s ease;
+    border-left: 4px solid #34a853;
+    margin-bottom: 12px;
+}
+
+.relatorio-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.relatorio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.relatorio-data {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a73e8;
+    margin: 0;
+}
+
+.relatorio-contador {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}

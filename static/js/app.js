@@ -70,6 +70,12 @@ class AppSheetInspecao {
             return;
         }
         
+        // Se for aba de relatório, carregar dados diferentes
+        if (this.currentTab === 'relatorio') {
+            await this.loadRelatorioData();
+            return;
+        }
+        
         const search = searchField.value;
         let url = '/api/inspecoes';
         
@@ -109,7 +115,8 @@ class AppSheetInspecao {
         const names = {
             'aprovadas': 'Aprovadas',
             'inspecao': 'Em Inspeção',
-            'avaliacao': 'Aguardando Avaliação'
+            'avaliacao': 'Aguardando Avaliação',
+            'relatorio': 'Relatório Diário'
         };
         return names[tab] || 'Aprovadas';
     }
@@ -523,6 +530,9 @@ class AppSheetInspecao {
         this.formAdicionar.reset();
         this.formEditar.reset();
         
+        // Limpar imagens temporárias
+        this.imagensTemp = [];
+        
         // Limpar botões ativos
         document.querySelectorAll('.btn-turno.active').forEach(btn => {
             btn.classList.remove('active');
@@ -546,6 +556,22 @@ class AppSheetInspecao {
             preview.style.display = 'none';
             preview.src = '';
         });
+    }
+    
+    async salvarImagensTemporarias(inspecaoId) {
+        for (const img of this.imagensTemp) {
+            img.inspecao_ref = inspecaoId;
+            try {
+                await fetch('/api/imagens', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(img)
+                });
+            } catch (error) {
+                console.error('Erro ao salvar imagem temporária:', error);
+            }
+        }
+        this.imagensTemp = [];
     }
 
     async loadOperadores() {
@@ -745,6 +771,10 @@ class AppSheetInspecao {
             this.hideSavingPopup();
             
             if (result.success) {
+                // Salvar imagens temporárias se existirem
+                if (this.imagensTemp && this.imagensTemp.length > 0) {
+                    await this.salvarImagensTemporarias(data.id);
+                }
                 this.closeModals();
                 this.loadData();
                 this.showSuccessPopup('Inspeção adicionada com sucesso!');
@@ -1312,6 +1342,89 @@ class AppSheetInspecao {
         }
     }
     
+    async loadRelatorioData() {
+        this.showStatus('Carregando relatório...', 'info');
+        
+        try {
+            const response = await fetch('/api/relatorio-diario');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            this.renderRelatorio(data);
+            this.showStatus(`Relatório carregado com ${data.length} dias`, 'success');
+        } catch (error) {
+            console.error('Erro ao carregar relatório:', error);
+            this.showStatus(`Erro ao carregar relatório: ${error.message}`, 'error');
+        }
+    }
+    
+    renderRelatorio(data) {
+        if (!this.cardsContainer) {
+            console.error('cardsContainer não encontrado');
+            return;
+        }
+        
+        this.cardsContainer.innerHTML = '';
+        
+        if (data.length === 0) {
+            this.cardsContainer.innerHTML = '<div class="no-data">Nenhum dado encontrado</div>';
+            return;
+        }
+        
+        console.log('Dados do relatório:', data);
+        
+        const fragment = document.createDocumentFragment();
+        
+        data.forEach(row => {
+            console.log('Processando linha:', row);
+            const card = document.createElement('div');
+            card.className = 'relatorio-card';
+            
+            const dataFormatada = this.formatarDataRelatorio(row.data_inspecao);
+            console.log('Data formatada:', dataFormatada, 'de:', row.data_inspecao);
+            
+            card.innerHTML = `
+                <div class="relatorio-header">
+                    <h3 class="relatorio-data">${dataFormatada}</h3>
+                    <span class="relatorio-contador">${row.total_pecas} peças</span>
+                </div>
+            `;
+            
+            fragment.appendChild(card);
+        });
+        
+        this.cardsContainer.appendChild(fragment);
+    }
+    
+    formatarDataRelatorio(dataString) {
+        if (!dataString) return '';
+        
+        try {
+            // Se a data vier no formato YYYY-MM-DD
+            if (typeof dataString === 'string' && dataString.includes('-')) {
+                const [ano, mes, dia] = dataString.split('-');
+                return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+            }
+            
+            // Tentar criar objeto Date
+            const data = new Date(dataString);
+            if (isNaN(data.getTime())) {
+                return dataString; // Retorna string original se não conseguir converter
+            }
+            
+            const dia = data.getDate().toString().padStart(2, '0');
+            const mes = (data.getMonth() + 1).toString().padStart(2, '0');
+            const ano = data.getFullYear();
+            
+            return `${dia}/${mes}/${ano}`;
+        } catch (error) {
+            console.error('Erro ao formatar data:', error, dataString);
+            return dataString || '';
+        }
+    }
+    
     abrirModalImagem(isAdd) {
         const modal = document.createElement('div');
         modal.className = 'modal';
@@ -1438,9 +1551,13 @@ class AppSheetInspecao {
             return;
         }
         
-        // Não salvar se for modo adicionar (temp)
+        // Armazenar temporariamente se for modo adicionar
         if (isAdd) {
-            alert('Salve a inspeção primeiro antes de adicionar imagens');
+            if (!this.imagensTemp) this.imagensTemp = [];
+            this.imagensTemp.push(data);
+            document.body.removeChild(document.querySelector('.modal:last-child'));
+            this.carregarImagensLista(isAdd);
+            this.showStatus('Imagem adicionada temporariamente!', 'success');
             return;
         }
         
@@ -1463,16 +1580,26 @@ class AppSheetInspecao {
     }
     
     async carregarImagensLista(isAdd) {
-        const inspecaoId = isAdd ? 'temp' : this.editingId;
         const container = document.getElementById(isAdd ? 'imagensListaAdd' : 'imagensLista');
         
-        if (inspecaoId === 'temp') {
-            container.innerHTML = '<p>Imagens serão carregadas após salvar a inspeção</p>';
+        if (isAdd) {
+            // Mostrar imagens temporárias
+            const imagens = this.imagensTemp || [];
+            container.innerHTML = imagens.map(img => `
+                <div class="imagem-item">
+                    <img src="${img.imagem}" style="width: 100px; height: 75px; object-fit: cover;">
+                    <div class="imagem-info">
+                        <strong>${img.problema_encontrado}</strong><br>
+                        ${img.descricao}<br>
+                        <small>${img.observacao || ''}</small>
+                    </div>
+                </div>
+            `).join('') || '<p>Nenhuma imagem adicionada</p>';
             return;
         }
         
         try {
-            const response = await fetch(`/api/imagens/${inspecaoId}`);
+            const response = await fetch(`/api/imagens/${this.editingId}`);
             const imagens = await response.json();
             
             container.innerHTML = imagens.map(img => `

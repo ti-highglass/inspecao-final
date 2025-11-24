@@ -13,8 +13,8 @@ COPY . .
 # Criar diretório para logs
 RUN mkdir -p /app/logs
 
-# Tornar script executável
-RUN chmod +x start.sh
+# Converter line endings e tornar script executável
+RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
 
 # Expor ambas as portas
 EXPOSE 9010

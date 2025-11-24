@@ -253,6 +253,24 @@ def create_imagem():
         conn.close()
         return jsonify({'error': str(e)}), 400
 
+@app.route('/api/relatorio-diario', methods=['GET'])
+def get_relatorio_diario():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT DATE(data) as data_inspecao, COUNT(*) as total_pecas
+        FROM insp_final_checklist 
+        WHERE fabrica = 'Graffeno - Jarinu' 
+        AND a_peca_foi_aprovada IN ('Sim', 'Não', 'Condicional')
+        GROUP BY DATE(data)
+        ORDER BY DATE(data) DESC
+        LIMIT 30
+    """)
+    relatorio = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([dict(row) for row in relatorio])
+
 if __name__ == '__main__':
     print("Sistema de Inspeção Final iniciado!")
     print("Acesse: http://10.150.16.45:9010")
