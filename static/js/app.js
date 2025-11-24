@@ -47,6 +47,12 @@ class AppSheetInspecao {
         // Forms - prevenir submit com Enter
         this.formAdicionar.addEventListener('submit', (e) => e.preventDefault());
         this.formEditar.addEventListener('submit', (e) => e.preventDefault());
+        this.formAdicionar.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') e.preventDefault();
+        });
+        this.formEditar.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') e.preventDefault();
+        });
         
         // Botões de submit
         this.formAdicionar.querySelector('.btn-primary').addEventListener('click', (e) => {
@@ -176,35 +182,20 @@ class AppSheetInspecao {
             card.innerHTML = `
                 <div class="card-header">
                     <h3 class="card-title">${descricao}</h3>
-                    <span class="card-status ${statusClass}">${status}</span>
+                    <div class="card-right">
+                        <span class="card-status ${statusClass}">${status}</span>
+                        <button class="btn-view" data-id="${row.id}">✏️</button>
+                    </div>
                 </div>
                 <div class="card-info">
-                    <div class="info-item">
-                        <span class="info-label">Serial</span>
-                        <span class="info-value">${row.serial || '-'}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Código Barras</span>
-                        <span class="info-value">${row.codigo_de_barras || '-'}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">OP</span>
-                        <span class="info-value">${row.op || '-'}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Data</span>
-                        <span class="info-value">${row.data ? this.formatarData(row.data) : '-'}</span>
-                    </div>
+                    <small>Serial: ${row.serial || '-'} | OP: ${row.op || '-'}</small>
                 </div>
                 ${etapasPendentes}
-                <div class="card-actions">
-                    <button class="card-edit-btn" data-id="${row.id}">✏️ Editar</button>
-                </div>
             `;
             
             // Adicionar event listener ao botão de editar
-            const btnEdit = card.querySelector('.card-edit-btn');
-            btnEdit.addEventListener('click', (e) => {
+            const btnView = card.querySelector('.btn-view');
+            btnView.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const id = e.target.getAttribute('data-id');
@@ -708,32 +699,66 @@ class AppSheetInspecao {
     }
     
     async buscarFichaTecnica(projeto, peca) {
-        // Sempre mostrar campo produto quando OP não for encontrada
+        // Mostrar campos para seleção manual quando OP não for encontrada
         document.getElementById('produtoFieldAdd').style.display = 'block';
+        document.getElementById('descricaoCarroFieldAdd').style.display = 'block';
+        document.getElementById('descricaoFieldAdd').style.display = 'block';
         
+        // Carregar lista de veículos
+        await this.carregarVeiculos();
+        
+        this.configurarCampos(peca, '', '', '', '');
+    }
+    
+    async carregarVeiculos() {
         try {
-            const response = await fetch(`/api/ficha-tecnica/${projeto}`);
-            const dados = await response.json();
+            const response = await fetch('/api/veiculos');
+            this.veiculosData = await response.json();
             
-            if (dados.codigo_veiculo) {
-                this.formAdicionar.querySelector('[name="projeto"]').value = dados.codigo_veiculo;
-                this.formAdicionar.querySelector('[name="veiculo"]').value = dados.veiculo;
-                
-                this.configurarCampos(peca, '', dados.codigo_veiculo, dados.veiculo, '');
-            } else {
-                // Se não encontrar na ficha técnica, usar o projeto do código
-                this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
-                this.formAdicionar.querySelector('[name="veiculo"]').value = '';
-                
-                this.configurarCampos(peca, '', projeto, '', '');
-            }
+            this.renderizarVeiculos(this.veiculosData);
         } catch (error) {
-            console.error('Erro ao buscar ficha técnica:', error);
-            // Em caso de erro, usar o projeto do código
-            this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
-            this.formAdicionar.querySelector('[name="veiculo"]').value = '';
+            console.error('Erro ao carregar veículos:', error);
+        }
+    }
+    
+    renderizarVeiculos(veiculos, termo = '') {
+        const container = document.getElementById('descricaoCarroOptionsAdd');
+        const searchInput = `<div style="padding: 8px; border-bottom: 1px solid #e8eaed;"><input type="text" id="searchVeiculoAdd" placeholder="🔍 Pesquisar projeto..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${termo}" oninput="app.filtrarVeiculos(this.value)"></div>`;
+        const options = veiculos.map(veiculo => `
+            <label><input type="radio" name="descricao_carro" value="${veiculo.descricao_carro}" data-projeto="${veiculo.codigo_veiculo}" data-veiculo="${veiculo.veiculo}"> ${veiculo.descricao_carro}</label>
+        `).join('');
+        
+        container.innerHTML = searchInput + options;
+    }
+    
+    filtrarVeiculos(termo) {
+        if (!this.veiculosData) return;
+        
+        const veiculosFiltrados = this.veiculosData.filter(veiculo => 
+            veiculo.descricao_carro.toLowerCase().includes(termo.toLowerCase())
+        );
+        
+        this.renderizarVeiculos(veiculosFiltrados, termo);
+    }
+    
+    atualizarDescricaoManual() {
+        const peca = this.formAdicionar.querySelector('[name="peca"]').value;
+        const sensor = this.formAdicionar.querySelector('[name="sensor"]').value;
+        const descricaoCarroRadio = this.formAdicionar.querySelector('input[name="descricao_carro"]:checked');
+        const produtoRadio = this.formAdicionar.querySelector('input[name="produto"]:checked');
+        const produto = produtoRadio ? produtoRadio.value : '';
+        
+        if (descricaoCarroRadio) {
+            const projeto = descricaoCarroRadio.dataset.projeto;
+            const veiculo = descricaoCarroRadio.dataset.veiculo;
             
-            this.configurarCampos(peca, '', projeto, '', '');
+            // Atualizar campos hidden
+            this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
+            this.formAdicionar.querySelector('[name="veiculo"]').value = veiculo;
+            this.formAdicionar.querySelector('[name="produto"]').value = produto;
+            
+            const descricao = this.gerarDescricao(peca, sensor, projeto, veiculo, produto);
+            this.formAdicionar.querySelector('[name="descricao_final"]').value = descricao;
         }
     }
     
@@ -758,6 +783,9 @@ class AppSheetInspecao {
         
         // Resetar botões de câmera
         this.resetCameraButtons();
+        
+        // Mostrar campo descrição
+        document.getElementById('descricaoFieldAdd').style.display = 'block';
         
         // Gerar descrição
         const descricao = this.gerarDescricao(peca, sensor, projeto, veiculo, produto);

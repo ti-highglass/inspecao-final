@@ -85,6 +85,22 @@ def get_ficha_tecnica(projeto):
     conn.close()
     return jsonify(dict(dados) if dados else {})
 
+@app.route('/api/veiculos', methods=['GET'])
+def get_veiculos():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT codigo_veiculo || ' - ' || marca || ' ' || modelo as descricao_carro,
+               codigo_veiculo, marca || ' ' || modelo as veiculo
+        FROM ficha_tecnica_veiculos 
+        WHERE status = 'LIBERADO'
+        ORDER BY codigo_veiculo
+    """)
+    veiculos = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([dict(row) for row in veiculos])
+
 @app.route('/api/operadores', methods=['GET'])
 def get_operadores():
     conn = get_db_connection()

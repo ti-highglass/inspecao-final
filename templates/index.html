@@ -77,9 +77,21 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row readonly-row">
+                        <div class="form-row" id="descricaoCarroFieldAdd" style="display: none;">
+                            <label>Descrição Carro:</label>
+                            <div class="dropdown-checkbox" id="descricaoCarroDropdownAdd">
+                                <div class="dropdown-header" onclick="toggleDropdown('descricaoCarroDropdownAdd')">
+                                    <span id="descricaoCarroTextAdd">Selecione o veículo</span>
+                                    <span>▼</span>
+                                </div>
+                                <div class="dropdown-options" id="descricaoCarroOptionsAdd">
+                                    <!-- Opções serão carregadas via JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row readonly-row" id="descricaoFieldAdd" style="display: none;">
                             <label>Descrição:</label>
-                            <input type="text" name="descricao_carro" readonly>
+                            <input type="text" name="descricao_final" readonly>
                         </div>
                         <!-- Campos hidden para armazenar dados -->
                         <input type="hidden" name="peca">
@@ -980,7 +992,16 @@
                 const textElement = document.getElementById('produtoTextAdd');
                 textElement.textContent = e.target.value;
                 // Atualizar descrição quando produto for selecionado
-                app.atualizarDescricao();
+                if (document.getElementById('descricaoCarroFieldAdd').style.display === 'block') {
+                    app.atualizarDescricaoManual();
+                } else {
+                    app.atualizarDescricao();
+                }
+            }
+            if (e.target.type === 'radio' && e.target.name === 'descricao_carro') {
+                const textElement = document.getElementById('descricaoCarroTextAdd');
+                textElement.textContent = e.target.value;
+                app.atualizarDescricaoManual();
             }
         });
         
