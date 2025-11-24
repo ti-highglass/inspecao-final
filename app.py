@@ -291,4 +291,4 @@ def get_pecas_por_data(data):
 if __name__ == '__main__':
     print("Sistema de Inspeção Final iniciado!")
     print("Acesse: http://10.150.16.45:9010")
-    app.run(debug=True, host='0.0.0.0', port=9010)
+    app.run(debug=False, host='0.0.0.0', port=9010)
