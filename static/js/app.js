@@ -1373,29 +1373,65 @@ class AppSheetInspecao {
             return;
         }
         
-        console.log('Dados do relatório:', data);
-        
         const fragment = document.createDocumentFragment();
         
         data.forEach(row => {
-            console.log('Processando linha:', row);
             const card = document.createElement('div');
             card.className = 'relatorio-card';
             
             const dataFormatada = this.formatarDataRelatorio(row.data_inspecao);
-            console.log('Data formatada:', dataFormatada, 'de:', row.data_inspecao);
             
             card.innerHTML = `
-                <div class="relatorio-header">
+                <div class="relatorio-header" onclick="app.togglePecasData('${row.data_inspecao}')">
                     <h3 class="relatorio-data">${dataFormatada}</h3>
-                    <span class="relatorio-contador">${row.total_pecas} peças</span>
+                    <div class="relatorio-right">
+                        <span class="relatorio-contador">${row.total_pecas} peças</span>
+                        <span class="relatorio-arrow">▼</span>
+                    </div>
                 </div>
+                <div class="relatorio-pecas" id="pecas-${row.data_inspecao}" style="display: none;"></div>
             `;
             
             fragment.appendChild(card);
         });
         
         this.cardsContainer.appendChild(fragment);
+    }
+    
+    async togglePecasData(data) {
+        const pecasDiv = document.getElementById(`pecas-${data}`);
+        const arrow = pecasDiv.previousElementSibling.querySelector('.relatorio-arrow');
+        
+        if (pecasDiv.style.display === 'none') {
+            try {
+                const response = await fetch(`/api/relatorio-diario/${data}`);
+                const pecas = await response.json();
+                
+                pecasDiv.innerHTML = pecas.map(peca => {
+                    const descricao = this.gerarDescricao(peca.peca, peca.sensor, peca.projeto, peca.veiculo, peca.produto);
+                    return `
+                        <div class="peca-item">
+                            <div class="peca-info">
+                                <strong>${descricao}</strong><br>
+                                <small>Serial: ${peca.serial || '-'} | Código: ${peca.codigo_de_barras || '-'} | OP: ${peca.op || '-'}</small>
+                            </div>
+                            <div class="peca-actions">
+                                <span class="peca-status status-${peca.a_peca_foi_aprovada?.toLowerCase()}">${peca.a_peca_foi_aprovada}</span>
+                                <button class="btn-view" onclick="app.editRow('${peca.id}')">👁️</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                pecasDiv.style.display = 'block';
+                arrow.textContent = '▲';
+            } catch (error) {
+                console.error('Erro ao carregar peças:', error);
+            }
+        } else {
+            pecasDiv.style.display = 'none';
+            arrow.textContent = '▼';
+        }
     }
     
     formatarDataRelatorio(dataString) {

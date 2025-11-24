@@ -271,6 +271,23 @@ def get_relatorio_diario():
     conn.close()
     return jsonify([dict(row) for row in relatorio])
 
+@app.route('/api/relatorio-diario/<data>', methods=['GET'])
+def get_pecas_por_data(data):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT id, serial, codigo_de_barras, op, peca, projeto, veiculo, produto, sensor, a_peca_foi_aprovada
+        FROM insp_final_checklist 
+        WHERE fabrica = 'Graffeno - Jarinu' 
+        AND DATE(data) = %s
+        AND a_peca_foi_aprovada IN ('Sim', 'Condicional')
+        ORDER BY data DESC
+    """, (data,))
+    pecas = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([dict(row) for row in pecas])
+
 if __name__ == '__main__':
     print("Sistema de Inspeção Final iniciado!")
     print("Acesse: http://10.150.16.45:9010")
