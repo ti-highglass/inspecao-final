@@ -59,21 +59,34 @@
                             <label>Serial:</label>
                             <input type="text" name="serial" required placeholder="Digite o serial" maxlength="6">
                         </div>
+                        <div class="form-row" id="sensorFieldAdd" style="display: none;">
+                            <label>Sensor:</label>
+                            <input type="text" name="sensor" placeholder="Digite o sensor">
+                        </div>
+                        <div class="form-row" id="produtoFieldAdd" style="display: none;">
+                            <label>Produto:</label>
+                            <div class="dropdown-checkbox" id="produtoDropdownAdd">
+                                <div class="dropdown-header" onclick="toggleDropdown('produtoDropdownAdd')">
+                                    <span id="produtoTextAdd">Selecione o produto</span>
+                                    <span>▼</span>
+                                </div>
+                                <div class="dropdown-options">
+                                    <label><input type="radio" name="produto" value="GRAFFENO"> GRAFFENO</label>
+                                    <label><input type="radio" name="produto" value="EXTRA CLEAR"> EXTRA CLEAR</label>
+                                    <label><input type="radio" name="produto" value="PROJETO"> PROJETO</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row readonly-row">
+                            <label>Descrição:</label>
+                            <input type="text" name="descricao_carro" readonly>
+                        </div>
                         <!-- Campos hidden para armazenar dados -->
                         <input type="hidden" name="peca">
                         <input type="hidden" name="op">
                         <input type="hidden" name="projeto">
                         <input type="hidden" name="veiculo">
                         <input type="hidden" name="produto">
-                        
-                        <div class="form-row" id="sensorFieldAdd" style="display: none;">
-                            <label>Sensor:</label>
-                            <input type="text" name="sensor" placeholder="Digite o sensor">
-                        </div>
-                        <div class="form-row readonly-row">
-                            <label>Descrição:</label>
-                            <input type="text" name="descricao_carro" readonly>
-                        </div>
                         <div class="form-row">
                             <label>Turno Dimensional:</label>
                             <div class="btn-group">
@@ -955,13 +968,19 @@
             }
         }
         
-        // Event listeners para os checkboxes
+        // Event listeners para os checkboxes e radio buttons
         document.addEventListener('change', function(e) {
             if (e.target.type === 'checkbox' && e.target.name === 'motivo_bloqueio') {
                 const dropdown = e.target.closest('.dropdown-checkbox');
                 const dropdownId = dropdown.id;
                 const textId = dropdownId === 'motivoBloqueioDropdownAdd' ? 'motivoBloqueioTextAdd' : 'motivoBloqueioText';
                 updateDropdownText(dropdownId, textId);
+            }
+            if (e.target.type === 'radio' && e.target.name === 'produto') {
+                const textElement = document.getElementById('produtoTextAdd');
+                textElement.textContent = e.target.value;
+                // Atualizar descrição quando produto for selecionado
+                app.atualizarDescricao();
             }
         });
         

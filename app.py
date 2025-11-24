@@ -71,6 +71,20 @@ def get_dados_op(op):
     conn.close()
     return jsonify(dict(dados) if dados else {})
 
+@app.route('/api/ficha-tecnica/<projeto>', methods=['GET'])
+def get_ficha_tecnica(projeto):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT codigo_veiculo, marca || ' ' || modelo as veiculo
+        FROM ficha_tecnica_veiculos 
+        WHERE codigo_veiculo = %s
+    """, (projeto,))
+    dados = cur.fetchone()
+    cur.close()
+    conn.close()
+    return jsonify(dict(dados) if dados else {})
+
 @app.route('/api/operadores', methods=['GET'])
 def get_operadores():
     conn = get_db_connection()

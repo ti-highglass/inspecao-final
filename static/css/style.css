@@ -1210,3 +1210,16 @@ body.modal-open .btn-float {
 .btn-view:hover {
     background: #1557b0;
 }
+.dropdown-options input[type="radio"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: #1a73e8;
+    flex-shrink: 0;
+}
+
+.dropdown-options label:has(input[type="radio"]:checked) {
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-weight: 500;
+}

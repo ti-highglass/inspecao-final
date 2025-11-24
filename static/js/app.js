@@ -44,9 +44,19 @@ class AppSheetInspecao {
             btn.addEventListener('click', () => this.closeModals());
         });
 
-        // Forms
-        this.formAdicionar.addEventListener('submit', (e) => this.handleAdicionarSubmit(e));
-        this.formEditar.addEventListener('submit', (e) => this.handleEditarSubmit(e));
+        // Forms - prevenir submit com Enter
+        this.formAdicionar.addEventListener('submit', (e) => e.preventDefault());
+        this.formEditar.addEventListener('submit', (e) => e.preventDefault());
+        
+        // Botões de submit
+        this.formAdicionar.querySelector('.btn-primary').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleAdicionarSubmit(e);
+        });
+        this.formEditar.querySelector('.btn-primary').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleEditarSubmit(e);
+        });
 
         // Código de barras auto-fill
         this.formAdicionar.querySelector('[name="codigo_de_barras"]').addEventListener('input', (e) => {
@@ -669,54 +679,108 @@ class AppSheetInspecao {
                 const dados = await response.json();
                 
                 if (dados.codigo_veiculo) {
-                    const projeto = dados.codigo_veiculo;
-                    const veiculo = dados.modelo || '';
-                    const produto = dados.produto || '';
-                    const sensor = dados.sensor || '';
-                    
-                    this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
-                    this.formAdicionar.querySelector('[name="veiculo"]').value = veiculo;
-                    this.formAdicionar.querySelector('[name="produto"]').value = produto;
-                    
-                    // Mostrar campo sensor apenas para PBS
-                    const sensorField = document.getElementById('sensorFieldAdd');
-                    if (peca === 'PBS') {
-                        this.formAdicionar.querySelector('[name="sensor"]').value = sensor || '';
-                        sensorField.style.display = 'block';
-                    } else {
-                        this.formAdicionar.querySelector('[name="sensor"]').value = '';
-                        sensorField.style.display = 'none';
-                    }
-                    
-                    // Mostrar campos DIN apenas para PBS ou VGA
-                    const camposDin = document.getElementById('camposDinAdd');
-                    if (peca === 'PBS' || peca === 'VGA') {
-                        if (camposDin) camposDin.style.display = 'block';
-                    } else {
-                        if (camposDin) camposDin.style.display = 'none';
-                    }
-                    
-                    // Resetar botões de câmera
-                    this.resetCameraButtons();
-                    
-                    console.log('Dados da OP:', dados);
-                    console.log('Sensor recebido:', sensor);
-                    console.log('Peça:', peca);
-                    
-                    // Gerar descrição
-                    const descricao = this.gerarDescricao(peca, sensor, projeto, veiculo, produto);
-                    this.formAdicionar.querySelector('[name="descricao_carro"]').value = descricao;
-                    
-                    // Mostrar campo resistência se projeto for 484 ou 485
-                    const resistenciaField = document.getElementById('resistenciaFieldAdd');
-                    if (resistenciaField) {
-                        resistenciaField.style.display = (projeto === '484' || projeto === '485') ? 'block' : 'none';
-                    }
+                    await this.preencherDadosOP(dados, peca);
+                } else {
+                    // Se não encontrar OP, buscar na ficha técnica usando projeto do código
+                    const projeto = codigo.substring(3, codigo.length - 5);
+                    await this.buscarFichaTecnica(projeto, peca);
                 }
             } catch (error) {
                 console.error('Erro ao buscar dados da OP:', error);
+                // Tentar buscar na ficha técnica
+                const projeto = codigo.substring(3, codigo.length - 5);
+                await this.buscarFichaTecnica(projeto, peca);
             }
         }
+    }
+    
+    async preencherDadosOP(dados, peca) {
+        const projeto = dados.codigo_veiculo;
+        const veiculo = dados.modelo || '';
+        const produto = dados.produto || '';
+        const sensor = dados.sensor || '';
+        
+        this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
+        this.formAdicionar.querySelector('[name="veiculo"]').value = veiculo;
+        this.formAdicionar.querySelector('[name="produto"]').value = produto;
+        
+        this.configurarCampos(peca, sensor, projeto, veiculo, produto);
+    }
+    
+    async buscarFichaTecnica(projeto, peca) {
+        // Sempre mostrar campo produto quando OP não for encontrada
+        document.getElementById('produtoFieldAdd').style.display = 'block';
+        
+        try {
+            const response = await fetch(`/api/ficha-tecnica/${projeto}`);
+            const dados = await response.json();
+            
+            if (dados.codigo_veiculo) {
+                this.formAdicionar.querySelector('[name="projeto"]').value = dados.codigo_veiculo;
+                this.formAdicionar.querySelector('[name="veiculo"]').value = dados.veiculo;
+                
+                this.configurarCampos(peca, '', dados.codigo_veiculo, dados.veiculo, '');
+            } else {
+                // Se não encontrar na ficha técnica, usar o projeto do código
+                this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
+                this.formAdicionar.querySelector('[name="veiculo"]').value = '';
+                
+                this.configurarCampos(peca, '', projeto, '', '');
+            }
+        } catch (error) {
+            console.error('Erro ao buscar ficha técnica:', error);
+            // Em caso de erro, usar o projeto do código
+            this.formAdicionar.querySelector('[name="projeto"]').value = projeto;
+            this.formAdicionar.querySelector('[name="veiculo"]').value = '';
+            
+            this.configurarCampos(peca, '', projeto, '', '');
+        }
+    }
+    
+    configurarCampos(peca, sensor, projeto, veiculo, produto) {
+        // Mostrar campo sensor apenas para PBS
+        const sensorField = document.getElementById('sensorFieldAdd');
+        if (peca === 'PBS') {
+            this.formAdicionar.querySelector('[name="sensor"]').value = sensor || '';
+            sensorField.style.display = 'block';
+        } else {
+            this.formAdicionar.querySelector('[name="sensor"]').value = '';
+            sensorField.style.display = 'none';
+        }
+        
+        // Mostrar campos DIN apenas para PBS ou VGA
+        const camposDin = document.getElementById('camposDinAdd');
+        if (peca === 'PBS' || peca === 'VGA') {
+            if (camposDin) camposDin.style.display = 'block';
+        } else {
+            if (camposDin) camposDin.style.display = 'none';
+        }
+        
+        // Resetar botões de câmera
+        this.resetCameraButtons();
+        
+        // Gerar descrição
+        const descricao = this.gerarDescricao(peca, sensor, projeto, veiculo, produto);
+        this.formAdicionar.querySelector('[name="descricao_carro"]').value = descricao;
+        
+        // Mostrar campo resistência se projeto for 484 ou 485
+        const resistenciaField = document.getElementById('resistenciaFieldAdd');
+        if (resistenciaField) {
+            resistenciaField.style.display = (projeto === '484' || projeto === '485') ? 'block' : 'none';
+        }
+    }
+    
+    atualizarDescricao() {
+        const peca = this.formAdicionar.querySelector('[name="peca"]').value;
+        const sensor = this.formAdicionar.querySelector('[name="sensor"]').value;
+        const projeto = this.formAdicionar.querySelector('[name="projeto"]').value;
+        const veiculo = this.formAdicionar.querySelector('[name="veiculo"]').value;
+        const produtoRadio = this.formAdicionar.querySelector('input[name="produto"]:checked');
+        const produto = produtoRadio ? produtoRadio.value : '';
+        
+        const descricao = this.gerarDescricao(peca, sensor, projeto, veiculo, produto);
+        this.formAdicionar.querySelector('[name="descricao_carro"]').value = descricao;
+        this.formAdicionar.querySelector('[name="produto"]').value = produto;
     }
 
     async handleAdicionarSubmit(e) {
